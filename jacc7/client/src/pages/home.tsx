@@ -6,6 +6,7 @@ import { Menu } from "lucide-react";
 import Sidebar from "@/components/sidebar";
 import ChatInterface from "@/components/chat-interface";
 import UserStatsDashboard from "@/components/user-stats-dashboard";
+import DynamicWelcomeDashboard from "@/components/dynamic-welcome-dashboard";
 import { useAuth } from "@/hooks/useAuth";
 import { useNewChatFAB } from "@/components/bottom-nav";
 import type { Chat, Folder } from "@shared/schema";
@@ -34,6 +35,8 @@ export default function Home() {
       setActiveChatId(mostRecentChat.id);
     }
   }, [chats, activeChatId]);
+  // Don't auto-select a chat to allow welcome dashboard to show
+  // Users can manually select chats from the sidebar
 
   const handleNewChat = async () => {
     try {
@@ -96,18 +99,39 @@ export default function Home() {
             
             if (sendResponse.ok) {
               console.log("Message sent successfully via conversation starter");
-              console.log("Triggering page reload in 2 seconds...");
-              // Force the page to reload to show messages
-              setTimeout(() => {
-                console.log("Executing page reload now...");
-                window.location.href = window.location.href;
-              }, 2000);
+              // Refresh chats immediately to show the new chat in sidebar
+              await refetchChats();
+              console.log("Chats refreshed after message sent");
             }
           } catch (error) {
             console.error("Failed to send conversation starter message:", error);
           }
         }, 500);
         
+        // Send the initial message and trigger AI response
+        setTimeout(async () => {
+          try {
+            const messageResponse = await fetch(`/api/chats/${newChat.id}/messages`, {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              credentials: "include",
+              body: JSON.stringify({
+                content: message,
+                role: "user"
+              }),
+            });
+            
+            if (messageResponse.ok) {
+              console.log("Initial message sent successfully, AI response should follow");
+              // Refetch chats to update the UI with the new conversation
+              await refetchChats();
+            } else {
+              console.error("Failed to send initial message:", await messageResponse.text());
+            }
+          } catch (error) {
+            console.error("Failed to send initial message:", error);
+          }
+        }, 200);
       } else {
         console.error("Failed to create chat:", await response.text());
       }
@@ -211,6 +235,8 @@ export default function Home() {
             chatId={activeChatId}
             onChatUpdate={refetchChats}
             onNewChatWithMessage={handleNewChatWithMessage}
+            chats={chats}
+            folders={folders}
           />
         </div>
       </div>
@@ -223,6 +249,9 @@ export default function Home() {
             defaultSize={20}
             minSize={15}
             maxSize={30}
+            defaultSize={25}
+            minSize={20}
+            maxSize={40}
             collapsible
             onCollapse={() => setSidebarCollapsed(true)}
             onExpand={() => setSidebarCollapsed(false)}
@@ -245,6 +274,7 @@ export default function Home() {
 
           {/* Chat Panel */}
           <ResizablePanel defaultSize={55} minSize={40}>
+          <ResizablePanel defaultSize={75} minSize={60}>
             <ChatInterface
               chatId={activeChatId}
               onChatUpdate={refetchChats}
@@ -261,6 +291,10 @@ export default function Home() {
                 <UserStatsDashboard userId={user?.id} compact={true} />
               </div>
             </div>
+          </ResizablePanel>
+              chats={chats}
+              folders={folders}
+            />
           </ResizablePanel>
         </ResizablePanelGroup>
       </div>

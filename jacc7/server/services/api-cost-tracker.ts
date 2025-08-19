@@ -2,10 +2,26 @@ import { db } from '../db';
 import { apiUsageLogs, monthlyUsageSummary, type InsertApiUsageLog, type InsertMonthlyUsageSummary } from '@shared/schema';
 import { eq, and, sql } from 'drizzle-orm';
 
-// Current LLM pricing (updated as of January 2025)
+// Current LLM pricing (updated as of August 2025)
 export const LLM_PRICING = {
   // Anthropic Claude pricing per 1M tokens
   anthropic: {
+    'claude-4-sonnet-20250109': {
+      input: 3.00,   // $3.00 per 1M input tokens - Claude 4 Sonnet (Jan 2025) - CURRENT BEST MODEL
+      output: 15.00  // $15.00 per 1M output tokens - Best performance/cost ratio
+    },
+    'claude-4-opus': {
+      input: 15.00,  // Premium model - 5x more expensive but maximum intelligence
+      output: 75.00
+    },
+    'claude-sonnet-4-20250514': {
+      input: 3.00,   // Legacy Claude 4.0 Sonnet
+      output: 15.00
+    },
+    'claude-3.7': {
+      input: 3.00,   // Claude 3.7 Sonnet
+      output: 15.00
+    },
     'claude-3.5-sonnet': {
       input: 3.00,   // $3.00 per 1M input tokens
       output: 15.00  // $15.00 per 1M output tokens
@@ -21,9 +37,21 @@ export const LLM_PRICING = {
   },
   // OpenAI pricing per 1M tokens
   openai: {
+    'gpt-4o-sonnet': {
+      input: 5.00,   // GPT-4o Sonnet - Latest model
+      output: 20.00  // Updated pricing: $20.00 per 1M output tokens
+    },
     'gpt-4o': {
       input: 5.00,   // $5.00 per 1M input tokens
-      output: 15.00  // $15.00 per 1M output tokens
+      output: 20.00  // Updated pricing: $20.00 per 1M output tokens
+    },
+    'gpt-4o-mini': {
+      input: 0.15,   // Budget option
+      output: 0.60
+    },
+    'gpt-4.1-mini': {
+      input: 0.15,   // GPT-4.1 Mini
+      output: 0.60
     },
     'gpt-4-turbo': {
       input: 10.00,
@@ -74,22 +102,53 @@ export interface ApiUsageMetrics {
 
 export class ApiCostTracker {
   /**
+   * Map legacy/alternative model names to current pricing model keys
+   */
+  private mapModelName(provider: string, model: string): string {
+    const modelMappings: Record<string, Record<string, string>> = {
+      anthropic: {
+        'claude-sonnet-4': 'claude-sonnet-4-20250514',
+        'claude-4-sonnet': 'claude-sonnet-4-20250514',
+        'claude-4.0-sonnet': 'claude-sonnet-4-20250514',
+        'claude-3.5': 'claude-3.5-sonnet',
+        'claude-3.7-sonnet': 'claude-3.7',
+        'claude-opus-4-1': 'claude-opus-4-1-20250805',
+        'claude-4.1-opus': 'claude-opus-4-1-20250805'
+      },
+      openai: {
+        'gpt-4o-mini': 'gpt-4o-mini',
+        'gpt-4.1-mini': 'gpt-4.1-mini',
+        'gpt4': 'gpt-4-turbo',
+        'gpt-4-turbo-preview': 'gpt-4-turbo'
+      }
+    };
+
+    return modelMappings[provider]?.[model] || model;
+  }
+
+  /**
    * Calculate estimated cost based on usage metrics
    */
   private calculateCost(metrics: ApiUsageMetrics): number {
     const { provider, model, inputTokens = 0, outputTokens = 0, requestCount = 1 } = metrics;
     
+    // Map legacy model names to current pricing keys
+    const mappedModel = this.mapModelName(provider, model);
+    
     let cost = 0;
     
-    if (provider === 'anthropic' && LLM_PRICING.anthropic[model as keyof typeof LLM_PRICING.anthropic]) {
-      const pricing = LLM_PRICING.anthropic[model as keyof typeof LLM_PRICING.anthropic];
+    if (provider === 'anthropic' && LLM_PRICING.anthropic[mappedModel as keyof typeof LLM_PRICING.anthropic]) {
+      const pricing = LLM_PRICING.anthropic[mappedModel as keyof typeof LLM_PRICING.anthropic];
       cost = (inputTokens * pricing.input / 1_000_000) + (outputTokens * pricing.output / 1_000_000);
-    } else if (provider === 'openai' && LLM_PRICING.openai[model as keyof typeof LLM_PRICING.openai]) {
-      const pricing = LLM_PRICING.openai[model as keyof typeof LLM_PRICING.openai];
+    } else if (provider === 'openai' && LLM_PRICING.openai[mappedModel as keyof typeof LLM_PRICING.openai]) {
+      const pricing = LLM_PRICING.openai[mappedModel as keyof typeof LLM_PRICING.openai];
       cost = (inputTokens * pricing.input / 1_000_000) + (outputTokens * pricing.output / 1_000_000);
-    } else if (provider === 'pinecone' && LLM_PRICING.pinecone[model as keyof typeof LLM_PRICING.pinecone]) {
-      const pricing = LLM_PRICING.pinecone[model as keyof typeof LLM_PRICING.pinecone];
+    } else if (provider === 'pinecone' && LLM_PRICING.pinecone[mappedModel as keyof typeof LLM_PRICING.pinecone]) {
+      const pricing = LLM_PRICING.pinecone[mappedModel as keyof typeof LLM_PRICING.pinecone];
       cost = requestCount * pricing.input / 1_000; // Per 1K queries
+    } else {
+      // Log unmapped models for debugging
+      console.warn(`⚠️ Cost calculation: Unknown model '${model}' for provider '${provider}'. Mapped to: '${mappedModel}'`);
     }
     
     return Math.round(cost * 1_000_000) / 1_000_000; // Round to 6 decimal places
@@ -211,23 +270,19 @@ export class ApiCostTracker {
     }>;
   }> {
     try {
-      let query = db
-        .select()
-        .from(monthlyUsageSummary)
-        .where(eq(monthlyUsageSummary.userId, userId));
+      let whereConditions = [eq(monthlyUsageSummary.userId, userId)];
 
       if (year && month) {
-        query = query.where(
-          and(
-            eq(monthlyUsageSummary.year, year),
-            eq(monthlyUsageSummary.month, month)
-          )
-        );
+        whereConditions.push(eq(monthlyUsageSummary.year, year));
+        whereConditions.push(eq(monthlyUsageSummary.month, month));
       } else if (year) {
-        query = query.where(eq(monthlyUsageSummary.year, year));
+        whereConditions.push(eq(monthlyUsageSummary.year, year));
       }
 
-      const results = await query;
+      const results = await db
+        .select()
+        .from(monthlyUsageSummary)
+        .where(and(...whereConditions));
 
       const stats = {
         totalCost: 0,

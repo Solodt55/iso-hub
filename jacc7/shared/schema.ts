@@ -30,14 +30,14 @@ export const sessions = pgTable(
 
 // User storage table with authentication
 export const users = pgTable("users", {
-  id: varchar("id").primaryKey().notNull().$defaultFn(() => crypto.randomUUID()),
+  id: varchar("id").primaryKey().notNull(),
   username: varchar("username").unique().notNull(),
   email: varchar("email").unique().notNull(),
   passwordHash: varchar("password_hash").notNull(),
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
-  role: varchar("role").default("sales-agent"), // sales-agent, client-admin, dev-admin
+  role: varchar("role").default("sales-agent"), // sales-agent, agent, manager, client-admin, dev-admin
   isActive: boolean("is_active").default(true),
   // ISO Hub integration fields
   isoHubId: varchar("iso_hub_id"),
@@ -136,6 +136,7 @@ export const adminSettings = pgTable("admin_settings", {
 });
 
 // API Keys for external tool integration  
+// API Keys for external tool integration
 export const apiKeys = pgTable("api_keys", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name").notNull(),
@@ -172,11 +173,11 @@ export const vendors = pgTable("vendors", {
 });
 
 // Folders for organizing documents and chats with vector namespaces
-export const folders = pgTable("folders", {
+export const folders: any = pgTable("folders", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 255 }).notNull(),
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  parentId: uuid("parent_id"),
+  parentId: uuid("parent_id").references(() => folders.id, { onDelete: "cascade" }),
   color: varchar("color", { length: 50 }).default("blue"),
   vectorNamespace: varchar("vector_namespace", { length: 255 }).notNull(), // Pinecone namespace
   folderType: varchar("folder_type", { length: 50 }).default("custom"), // processor, gateway, hardware, sales, custom
@@ -206,6 +207,40 @@ export const messages = pgTable("messages", {
   createdAt: timestamp("created_at").defaultNow(),
 });
 
+// Content Quality Management - Chunks needing human attention
+export const contentQualityFlags = pgTable("content_quality_flags", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  chunkId: varchar("chunk_id").notNull().references(() => documentChunks.id, { onDelete: "cascade" }),
+  documentId: uuid("document_id").notNull().references(() => documents.id, { onDelete: "cascade" }),
+  flagType: varchar("flag_type").notNull(), // 'generic_template', 'too_short', 'needs_details', 'low_quality'
+  flagReason: text("flag_reason").notNull(),
+  priority: varchar("priority").default("medium"), // 'low', 'medium', 'high', 'critical'
+  status: varchar("status").default("pending"), // 'pending', 'in_review', 'enhanced', 'dismissed'
+  assignedTo: varchar("assigned_to").references(() => users.id),
+  aiSuggestion: text("ai_suggestion"), // AI-generated improvement suggestions
+  humanNotes: text("human_notes"),
+  originalContent: text("original_content").notNull(),
+  enhancedContent: text("enhanced_content"),
+  reviewCount: integer("review_count").default(0),
+  lastReviewAt: timestamp("last_review_at"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+// Content Enhancement Workflow - Track improvement sessions
+export const contentEnhancementSessions = pgTable("content_enhancement_sessions", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  sessionName: varchar("session_name").notNull(),
+  description: text("description"),
+  chunksProcessed: integer("chunks_processed").default(0),
+  chunksEnhanced: integer("chunks_enhanced").default(0),
+  timeSpent: integer("time_spent_minutes").default(0),
+  status: varchar("status").default("active"), // 'active', 'paused', 'completed'
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
 // Chat monitoring for analytics and debugging
 export const chatMonitoring = pgTable("chat_monitoring", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -230,7 +265,7 @@ export const documents = pgTable("documents", {
   mimeType: varchar("mime_type", { length: 100 }).notNull(),
   size: integer("size").notNull(),
   path: text("path").notNull(),
-  userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: varchar("user_id").references(() => users.id, { onDelete: "cascade" }),
   folderId: uuid("folder_id").references(() => folders.id, { onDelete: "set null" }),
   isFavorite: boolean("is_favorite").default(false),
   contentHash: varchar("content_hash", { length: 64 }), // SHA256 hash for duplicate detection
@@ -239,6 +274,9 @@ export const documents = pgTable("documents", {
   isPublic: boolean("is_public").default(true), // Visible to all users
   adminOnly: boolean("admin_only").default(false), // Only admins can view
   managerOnly: boolean("manager_only").default(false), // Admins and managers can view
+  // AI training and processing settings
+  trainingData: boolean("training_data").default(false), // Use for AI training
+  autoVectorize: boolean("auto_vectorize").default(false), // Auto-vectorize for search
   // Tagging system for enhanced organization
   tags: text("tags").array().default([]), // Array of tag strings
   category: varchar("category", { length: 100 }), // Primary category
@@ -267,14 +305,14 @@ export const personalDocuments = pgTable("personal_documents", {
 });
 
 // Personal folders - user-specific folder structure
-export const personalFolders = pgTable("personal_folders", {
+export const personalFolders: any = pgTable("personal_folders", {
   id: uuid("id").primaryKey().defaultRandom(),
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   color: varchar("color", { length: 7 }).default("#3B82F6"), // Hex color code
   icon: varchar("icon", { length: 50 }).default("Folder"), // Lucide icon name
   userId: varchar("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
-  parentId: uuid("parent_id"),
+  parentId: uuid("parent_id").references(() => personalFolders.id, { onDelete: "cascade" }),
   sortOrder: integer("sort_order").default(0),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
@@ -570,6 +608,47 @@ export const faqKnowledgeBase = pgTable("faq_knowledge_base", {
   lastUpdated: timestamp("last_updated").defaultNow(),
   createdAt: timestamp("created_at").defaultNow(),
   createdBy: varchar("created_by").default("admin"),
+  googleSheetRowId: varchar("google_sheet_row_id"), // Track which row this came from
+  sourceType: varchar("source_type").default("manual"), // "manual" or "google_sheets"
+});
+
+// Google Sheets Sync Configuration
+export const googleSheetsSyncConfig = pgTable("google_sheets_sync_config", {
+  id: serial("id").primaryKey(),
+  spreadsheetId: varchar("spreadsheet_id").notNull(), // Google Sheets ID
+  sheetName: varchar("sheet_name").default("Sheet1"), // Sheet tab name
+  questionColumn: varchar("question_column").default("A"), // Column for questions
+  answerColumn: varchar("answer_column").default("B"), // Column for answers
+  categoryColumn: varchar("category_column").default("C"), // Column for category
+  tagsColumn: varchar("tags_column").default("D"), // Column for tags (comma-separated)
+  priorityColumn: varchar("priority_column").default("E"), // Column for priority
+  isActiveColumn: varchar("is_active_column").default("F"), // Column for active status
+  headerRow: integer("header_row").default(1), // Which row contains headers
+  syncEnabled: boolean("sync_enabled").default(true),
+  syncFrequency: varchar("sync_frequency").default("manual"), // "manual", "hourly", "daily"
+  lastSyncAt: timestamp("last_sync_at"),
+  lastSyncStatus: varchar("last_sync_status"), // "success", "error", "in_progress"
+  lastSyncError: text("last_sync_error"),
+  createdAt: timestamp("created_at").defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+  createdBy: varchar("created_by").references(() => users.id),
+});
+
+// Google Sheets Sync Log
+export const googleSheetsSyncLog = pgTable("google_sheets_sync_log", {
+  id: serial("id").primaryKey(),
+  configId: integer("config_id").references(() => googleSheetsSyncConfig.id),
+  syncType: varchar("sync_type").notNull(), // "manual", "scheduled"
+  status: varchar("status").notNull(), // "success", "error", "partial"
+  itemsProcessed: integer("items_processed").default(0),
+  itemsAdded: integer("items_added").default(0),
+  itemsUpdated: integer("items_updated").default(0),
+  itemsSkipped: integer("items_skipped").default(0),
+  errorDetails: text("error_details"),
+  duration: integer("duration"), // milliseconds
+  startedAt: timestamp("started_at").notNull(),
+  completedAt: timestamp("completed_at"),
+  triggeredBy: varchar("triggered_by").references(() => users.id),
 });
 
 // Vendor URL Management for automatic training
@@ -720,6 +799,80 @@ export const processorMarkups = pgTable("processor_markups", {
   lastUpdated: timestamp("last_updated").defaultNow(),
   updatedBy: varchar("updated_by").notNull(),
 });
+
+// Security tables for bank-level protection
+
+export const loginAttempts = pgTable('login_attempts', {
+  id: serial('id').primaryKey(),
+  username: varchar('username').notNull(),
+  ipAddress: varchar('ip_address').notNull(),
+  userAgent: text('user_agent'),
+  attemptTime: timestamp('attempt_time').defaultNow().notNull(),
+  success: boolean('success').default(false)
+}, (table) => [
+  index('idx_login_username').on(table.username),
+  index('idx_login_ip').on(table.ipAddress),
+  index('idx_login_time').on(table.attemptTime)
+]);
+
+export const userSecuritySettings = pgTable('user_security_settings', {
+  userId: varchar('user_id').primaryKey().references(() => users.id),
+  totpEnabled: boolean('totp_enabled').default(false),
+  totpSecret: varchar('totp_secret'),
+  backupCodes: text('backup_codes').array(),
+  lastPasswordChange: timestamp('last_password_change').defaultNow(),
+  passwordHistory: text('password_history').array(),
+  securityQuestions: jsonb('security_questions'),
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow()
+});
+
+export const documentAccessLogs = pgTable('document_access_logs', {
+  id: serial('id').primaryKey(),
+  userId: varchar('user_id').notNull(),
+  documentId: varchar('document_id').notNull(),
+  accessType: varchar('access_type').notNull(), // view, download, edit
+  allowed: boolean('allowed').notNull(),
+  reason: varchar('reason'),
+  ipAddress: varchar('ip_address').notNull(),
+  userAgent: text('user_agent'),
+  timestamp: timestamp('timestamp').defaultNow().notNull()
+}, (table) => [
+  index('idx_doc_access_user').on(table.userId),
+  index('idx_doc_access_doc').on(table.documentId),
+  index('idx_doc_access_time').on(table.timestamp)
+]);
+
+// Security sessions for bank-level authentication
+export const securitySessions = pgTable('security_sessions', {
+  id: varchar('id').primaryKey(),
+  userId: varchar('user_id').notNull().references(() => users.id),
+  ipAddress: varchar('ip_address').notNull(),
+  userAgent: text('user_agent'),
+  createdAt: timestamp('created_at').defaultNow().notNull(),
+  expiresAt: timestamp('expires_at').notNull(),
+  lastActivity: timestamp('last_activity').defaultNow().notNull(),
+  isActive: boolean('is_active').default(true)
+}, (table) => [
+  index('idx_security_session_user').on(table.userId),
+  index('idx_security_session_active').on(table.isActive),
+  index('idx_security_session_expires').on(table.expiresAt)
+]);
+
+export const documentPermissions = pgTable('document_permissions', {
+  id: serial('id').primaryKey(),
+  documentId: varchar('document_id').notNull(),
+  userId: varchar('user_id'),
+  groupId: varchar('group_id'),
+  permissionLevel: varchar('permission_level').notNull(), // read, download, write, admin
+  grantedBy: varchar('granted_by').notNull(),
+  grantedAt: timestamp('granted_at').defaultNow(),
+  expiresAt: timestamp('expires_at')
+}, (table) => [
+  index('idx_doc_perm_doc').on(table.documentId),
+  index('idx_doc_perm_user').on(table.userId),
+  index('idx_doc_perm_group').on(table.groupId)
+]);
 
 // Define relations
 export const vendorsRelations = relations(vendors, ({ many }) => ({
@@ -1100,13 +1253,13 @@ export const monthlyUsageSummary = pgTable("monthly_usage_summary", {
   index("idx_monthly_usage_provider").on(table.provider, table.model),
 ]);
 
-export type UserPrompt = typeof userPrompts.$inferSelect;
-export type InsertUserPrompt = typeof userPrompts.$inferInsert;
 // API Usage Types
 export type ApiUsageLog = typeof apiUsageLogs.$inferSelect;
 export type InsertApiUsageLog = typeof apiUsageLogs.$inferInsert;
 export type MonthlyUsageSummary = typeof monthlyUsageSummary.$inferSelect;
 export type InsertMonthlyUsageSummary = typeof monthlyUsageSummary.$inferInsert;
+export type UserPrompt = typeof userPrompts.$inferSelect;
+export type InsertUserPrompt = typeof userPrompts.$inferInsert;
 // Removed duplicate InsertUser definition
 export type ApiKey = typeof apiKeys.$inferSelect;
 export type InsertApiKey = z.infer<typeof insertApiKeySchema>;

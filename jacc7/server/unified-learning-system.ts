@@ -30,6 +30,7 @@ export class UnifiedLearningSystem {
         response: interaction.response,
         source: interaction.source,
         userId: interaction.userId || 'admin-user',
+        userId: interaction.userId || 'system',
         sessionId: interaction.sessionId || this.generateSessionId(),
         quality: interaction.quality || null,
         wasCorrect: interaction.wasCorrect ?? true,

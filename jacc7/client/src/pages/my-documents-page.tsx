@@ -11,7 +11,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useToast } from "@/hooks/use-toast";
 import { apiRequest } from "@/lib/queryClient";
-import DocumentUpload from "@/components/document-upload-new";
 import { 
   Folder, 
   FileText, 
@@ -33,7 +32,6 @@ export default function MyDocumentsPage() {
   const [selectedFolder, setSelectedFolder] = useState<string | null>(null);
   const [isCreateFolderOpen, setIsCreateFolderOpen] = useState(false);
   const [isEditDocumentOpen, setIsEditDocumentOpen] = useState(false);
-  const [isUploadDialogOpen, setIsUploadDialogOpen] = useState(false);
   const [editingDocument, setEditingDocument] = useState<PersonalDocument | null>(null);
   const [newFolderName, setNewFolderName] = useState("");
   const [newFolderDescription, setNewFolderDescription] = useState("");
@@ -50,14 +48,6 @@ export default function MyDocumentsPage() {
   const { data: folders = [], isLoading: foldersLoading } = useQuery<PersonalFolder[]>({
     queryKey: ['/api/personal-folders'],
   });
-
-  // Debug logging
-  console.log('Personal Documents Response:', documents);
-  console.log('Personal Folders Response:', folders);
-  console.log('Documents Loading:', documentsLoading);
-  console.log('Folders Loading:', foldersLoading);
-  console.log('Total Documents Count:', documents.length);
-  console.log('Total Folders Count:', folders.length);
 
   // Create folder mutation
   const createFolderMutation = useMutation({
@@ -133,13 +123,13 @@ export default function MyDocumentsPage() {
 
   // Handle document view
   const handleViewDocument = (document: PersonalDocument) => {
-    // Navigate to document viewer page
-    window.location.href = `/documents/${document.id}`;
+    // Open document in new tab for viewing
+    window.open(`/api/personal-documents/${document.id}/view`, '_blank');
   };
 
   // Handle document download
   const handleDownloadDocument = (document: PersonalDocument) => {
-    const downloadUrl = `/api/documents/${document.id}/download`;
+    const downloadUrl = `/api/personal-documents/${document.id}/download`;
     const link = window.document.createElement('a');
     link.href = downloadUrl;
     link.download = document.originalName || document.name;
@@ -182,28 +172,18 @@ export default function MyDocumentsPage() {
                          doc.content?.toLowerCase().includes(searchQuery.toLowerCase()) ||
                          doc.tags?.some(tag => tag.toLowerCase().includes(searchQuery.toLowerCase()));
     
-    // Handle both personalFolderId and folderId for compatibility
-    const docFolderId = doc.personalFolderId || (doc as any).folderId;
-    const matchesFolder = selectedFolder ? docFolderId === selectedFolder : true;
+    const matchesFolder = selectedFolder ? doc.personalFolderId === selectedFolder : true;
     
     return matchesSearch && matchesFolder;
   });
 
   // Get documents in selected folder
   const folderDocuments = selectedFolder 
-    ? documents.filter((doc) => (doc.personalFolderId || (doc as any).folderId) === selectedFolder)
+    ? documents.filter((doc) => doc.personalFolderId === selectedFolder)
     : [];
 
   // Get unorganized documents
-  const unorganizedDocuments = documents.filter((doc) => !(doc.personalFolderId || (doc as any).folderId));
-
-  // Debug logging for document structure
-  console.log('All documents:', documents);
-  console.log('Documents with personalFolderId:', documents.filter(doc => doc.personalFolderId));
-  console.log('Documents with folderId:', documents.filter(doc => (doc as any).folderId));
-  console.log('Selected folder:', selectedFolder);
-  console.log('Folder documents:', folderDocuments);
-  console.log('Unorganized documents:', unorganizedDocuments);
+  const unorganizedDocuments = documents.filter((doc) => !doc.personalFolderId);
 
   const handleCreateFolder = () => {
     if (!newFolderName.trim()) return;
@@ -266,9 +246,6 @@ export default function MyDocumentsPage() {
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">My Documents</h1>
           <p className="text-gray-600 dark:text-gray-400">Organize and manage your personal documents</p>
-          <p className="text-sm text-blue-600 dark:text-blue-400 mt-1">
-            Total Documents: {documents.length} document{documents.length !== 1 ? 's' : ''}
-          </p>
         </div>
         
         <div className="flex gap-2">
@@ -324,29 +301,10 @@ export default function MyDocumentsPage() {
             </DialogContent>
           </Dialog>
           
-          <Dialog open={isUploadDialogOpen} onOpenChange={setIsUploadDialogOpen}>
-            <DialogTrigger asChild>
-              <Button className="flex items-center gap-2">
-                <Upload className="h-4 w-4" />
-                Upload Document
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>Upload Documents</DialogTitle>
-              </DialogHeader>
-              <DocumentUpload 
-                onUploadComplete={() => {
-                  setIsUploadDialogOpen(false);
-                  queryClient.invalidateQueries({ queryKey: ['/api/personal-documents'] });
-                  toast({
-                    title: "Upload Complete",
-                    description: "Documents have been uploaded successfully",
-                  });
-                }}
-              />
-            </DialogContent>
-          </Dialog>
+          <Button className="flex items-center gap-2">
+            <Upload className="h-4 w-4" />
+            Upload Document
+          </Button>
         </div>
       </div>
 
@@ -371,57 +329,50 @@ export default function MyDocumentsPage() {
         {/* Folders Tab */}
         <TabsContent value="folders" className="space-y-4">
           <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {folders.map((folder: PersonalFolder) => {
-              // Get documents for this specific folder
-              const folderDocuments = documents.filter((doc) => 
-                (doc.personalFolderId || (doc as any).folderId) === folder.id
-              );
-              
-              // Calculate document count more robustly
-              const documentCount = folderDocuments.length;
-              
-              return (
-                <Card 
-                  key={folder.id}
-                  className="cursor-pointer hover:shadow-md transition-shadow"
-                  onClick={() => setSelectedFolder(selectedFolder === folder.id ? null : folder.id)}
-                >
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <Folder className="h-5 w-5" style={{ color: folder.color || '#3B82F6' }} />
-                        <CardTitle className="text-lg">{folder.name}</CardTitle>
-                      </div>
-                      <div className="flex gap-1">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteFolder(folder.id);
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
-                      </div>
+            {folders.map((folder: PersonalFolder) => (
+              <Card 
+                key={folder.id} 
+                className="cursor-pointer hover:shadow-md transition-shadow"
+                onClick={() => setSelectedFolder(selectedFolder === folder.id ? null : folder.id)}
+              >
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <Folder 
+                        className="h-5 w-5" 
+                        style={{ color: folder.color || '#3B82F6' }}
+                      />
+                      <CardTitle className="text-lg">{folder.name}</CardTitle>
                     </div>
-                    {folder.description && (
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{folder.description}</p>
+                    <div className="flex gap-1">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleDeleteFolder(folder.id);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </div>
+                  {folder.description && (
+                    <p className="text-sm text-gray-600 dark:text-gray-400">{folder.description}</p>
+                  )}
+                </CardHeader>
+                <CardContent>
+                  <div className="flex items-center justify-between">
+                    <Badge variant="secondary">
+                      {folderDocuments.length} document{folderDocuments.length !== 1 ? 's' : ''}
+                    </Badge>
+                    {selectedFolder === folder.id && (
+                      <Badge variant="default">Selected</Badge>
                     )}
-                  </CardHeader>
-                  <CardContent>
-                    <div className="flex items-center justify-between">
-                      <Badge variant="secondary">
-                        {documentCount} document{documentCount !== 1 ? 's' : ''}
-                      </Badge>
-                      {selectedFolder === folder.id && (
-                        <Badge variant="default">Selected</Badge>
-                      )}
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
             
             {/* Unorganized Documents */}
             <Card 

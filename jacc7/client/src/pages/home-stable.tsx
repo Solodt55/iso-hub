@@ -6,16 +6,18 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Progress } from "@/components/ui/progress";
 import Sidebar from "@/components/sidebar";
 import ChatInterface from "@/components/chat-interface";
 import { useAuth } from "@/hooks/useAuth";
-import { useNewChatFAB } from "@/components/bottom-nav";
+// import { useNewChatFAB } from "@/components/bottom-nav"; // Commented out during Phase 1 cleanup
 import { apiRequest } from "@/lib/queryClient";
 import { useToast } from "@/hooks/use-toast";
 import { UsageMeter } from "@/components/gamification/usage-meter";
 // import { Leaderboard } from "@/components/gamification/leaderboard";
+import { Leaderboard } from "@/components/gamification/leaderboard";
+
 
 export default function HomeStable() {
   const { user } = useAuth();
@@ -25,60 +27,7 @@ export default function HomeStable() {
   const [isProcessingStatement, setIsProcessingStatement] = useState(false);
   const [processingProgress, setProcessingProgress] = useState(0);
   
-  // State to store ISO-Hub user data received via postMessage
-  const [isoHubUser, setIsoHubUser] = useState<any>(null);
-  
-  // Listen for ISO-Hub auth data from parent window
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'ISO_HUB_AUTH') {
-        console.log('HomeStable: Received ISO-Hub auth data:', event.data);
-        setIsoHubUser(event.data.user);
-        
-        // Send confirmation back to ISO-Hub
-        try {
-          window.parent.postMessage({
-            type: 'JACC_AUTH_RECEIVED',
-            success: true,
-            user: event.data.user
-          }, '*');
-          console.log('HomeStable: Sent confirmation to ISO-Hub that auth data was received');
-        } catch (err) {
-          console.error('HomeStable: Could not send confirmation to ISO-Hub:', err);
-        }
-      } else if (event.data.type === 'JACC_READY') {
-        console.log('HomeStable: JACC is ready to receive auth data:', event.data);
-        // Send ready message to ISO-Hub
-        try {
-          window.parent.postMessage({
-            type: 'JACC_READY',
-            message: 'JACC is ready to receive auth data'
-          }, '*');
-          console.log('HomeStable: Sent ready message to ISO-Hub');
-        } catch (err) {
-          console.error('HomeStable: Could not send ready message to ISO-Hub:', err);
-        }
-      }
-    };
 
-    window.addEventListener('message', handleMessage);
-    
-    // Send ready message to ISO-Hub
-    try {
-      window.parent.postMessage({
-        type: 'JACC_READY',
-        message: 'JACC is ready to receive auth data'
-      }, '*');
-      console.log('HomeStable: Sent ready message to ISO-Hub');
-    } catch (err) {
-      console.error('HomeStable: Could not send ready message to ISO-Hub:', err);
-    }
-    
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
-  
-  // Use ISO-Hub user data if available, otherwise fall back to JACC user
-  const displayUser = isoHubUser || user;
 
   // Extract chatId from URL
   const activeChatId = location.includes('/chat/') ? location.split('/chat/')[1] : null;
@@ -86,9 +35,22 @@ export default function HomeStable() {
   // Debug logging
   console.log('URL Debug:', { location, activeChatId, hasChat: location.includes('/chat/') });
 
+  // Debug user authentication state
+  console.log('🔐 User auth debug:', { 
+    user: user,
+    hasUser: !!user,
+    userType: typeof user,
+    userKeys: user ? Object.keys(user) : 'no user'
+  });
+
   // Fetch chats and folders
-  const { data: chats = [], refetch: refetchChats } = useQuery({
+  const { data: chats = [], refetch: refetchChats, isLoading: chatsLoading, error: chatsError } = useQuery({
     queryKey: ["/api/chats"],
+    staleTime: 0, // Always fetch fresh data
+    gcTime: 30000, // Keep in cache for 30 seconds
+    refetchOnMount: "always",
+    refetchOnWindowFocus: true,
+    // enabled: !!user, // Temporarily removed to debug
   });
 
   const { data: folders = [] } = useQuery({
@@ -146,21 +108,23 @@ export default function HomeStable() {
       navigate(`/chat/${newChat.id}`);
       console.log("Navigation called, new location should be:", `/chat/${newChat.id}`);
       
-      // Refresh chats immediately
-      queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
-      
-      // Send the message immediately without timeout
+      // Send the message using the unified chat API
       try {
         console.log("Sending message to new chat:", newChat.id);
-        await apiRequest("POST", `/api/chat/send`, {
+        await apiRequest("POST", "/api/chat/send", {
           chatId: newChat.id,
           message: message
         });
         console.log("Message sent successfully");
         
-        // Properly invalidate queries and update state without page reload
-        queryClient.invalidateQueries({ queryKey: [`/api/chats/${newChat.id}/messages`] });
-        queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
+        // Force refresh chats and messages
+        await queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
+        await queryClient.invalidateQueries({ queryKey: [`/api/chats/${newChat.id}/messages`] });
+        
+        // Force refetch to ensure immediate update
+        setTimeout(() => {
+          refetchChats();
+        }, 100);
       } catch (messageError) {
         console.error("Failed to send message:", messageError);
         toast({
@@ -179,6 +143,7 @@ export default function HomeStable() {
   };
 
   const handleChatSelect = (chatId: string) => {
+    console.log('🔄 Navigating to chat:', chatId);
     navigate(`/chat/${chatId}`);
   };
 
@@ -289,12 +254,46 @@ Would you like me to run a competitive analysis and show you better processing o
   };
 
   // Connect the floating action button to new chat creation
-  useNewChatFAB(handleNewChat);
+  // useNewChatFAB(handleNewChat); // Commented out during Phase 1 cleanup
+
+  console.log('🏠 HomeStable render debug:', { 
+    user: !!user, 
+    activeChatId, 
+    location,
+    chatsCount: Array.isArray(chats) ? chats.length : 0,
+    foldersCount: Array.isArray(folders) ? folders.length : 0,
+    chatsData: chats,
+    chatsType: typeof chats,
+    isArray: Array.isArray(chats),
+    chatsLoading,
+    chatsError: chatsError?.message || 'no error',
+    queryEnabled: !!user
+  });
+
+  // Force refresh chats when component mounts or location changes
+  useEffect(() => {
+    if (user) {
+      console.log('Location changed, refetching chats:', location);
+      refetchChats();
+    }
+  }, [location, user, refetchChats]);
+
+  // Auto-refresh chats every 15 seconds for recent updates
+  useEffect(() => {
+    if (user) {
+      const interval = setInterval(() => {
+        console.log('Auto-refreshing chats for recent updates...');
+        refetchChats();
+      }, 15000);
+      return () => clearInterval(interval);
+    }
+  }, [user, refetchChats]);
 
   return (
-    <div className="h-screen bg-slate-50 dark:bg-slate-900 overflow-hidden w-full max-w-full">
+    <div className="h-screen relative overflow-hidden w-full max-w-full">
+
       {/* Mobile Header - Always visible on mobile */}
-      <div className="lg:hidden bg-white dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700 p-4 flex items-center justify-between">
+      <div className="lg:hidden bg-white/90 dark:bg-slate-800/90 backdrop-blur-md border-b border-slate-200 dark:border-slate-700 p-4 flex items-center justify-between">
         <div className="flex items-center space-x-3">
           <Sheet>
             <SheetTrigger asChild>
@@ -302,9 +301,9 @@ Would you like me to run a competitive analysis and show you better processing o
                 <Menu className="w-5 h-5 text-slate-600 dark:text-slate-300" />
               </button>
             </SheetTrigger>
-            <SheetContent side="left" className="w-80 p-0">
+            <SheetContent side="left" className="w-80 p-0 bg-white/95 dark:bg-slate-800/95 backdrop-blur-lg">
               <Sidebar
-                user={displayUser}
+                user={user}
                 chats={chats as any[]}
                 folders={folders as any[]}
                 activeChatId={activeChatId}
@@ -312,6 +311,12 @@ Would you like me to run a competitive analysis and show you better processing o
                 onChatSelect={handleChatSelect}
                 onFolderCreate={handleFolderCreate}
                 onFolderDelete={handleFolderDelete}
+                onChatDelete={(chatId) => {
+                  queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
+                  refetchChats();
+                }}
+                chatsLoading={chatsLoading}
+                chatsError={chatsError}
                 collapsed={false}
               />
             </SheetContent>
@@ -321,19 +326,7 @@ Would you like me to run a competitive analysis and show you better processing o
             alt="JACC" 
             className="w-8 h-8 rounded-full object-cover" 
           />
-          <div className="flex flex-col">
-            <h1 className="text-lg font-semibold text-slate-900 dark:text-white">JACC</h1>
-            <p className="text-xs text-slate-500 dark:text-slate-400">
-              {displayUser?.firstName && displayUser?.lastName 
-                ? `${displayUser.firstName} ${displayUser.lastName}`
-                : displayUser?.first_name && displayUser?.last_name
-                ? `${displayUser.first_name} ${displayUser.last_name}`
-                : displayUser?.name
-                ? displayUser.name
-                : displayUser?.email || "User"
-              }
-            </p>
-          </div>
+          <h1 className="text-lg font-semibold text-slate-900 dark:text-white">JACC</h1>
         </div>
         <div className="flex gap-2">
           <button
@@ -346,7 +339,7 @@ Would you like me to run a competitive analysis and show you better processing o
       </div>
 
       {/* Mobile Chat Area */}
-      <div className="lg:hidden flex-1 h-[calc(100vh-64px-80px)] w-full overflow-hidden flex flex-col">
+      <div className="lg:hidden flex-1 h-[calc(100vh-80px)]">
         <ChatInterface 
           chatId={activeChatId} 
           onChatUpdate={refetchChats}
@@ -356,10 +349,10 @@ Would you like me to run a competitive analysis and show you better processing o
 
       {/* Desktop Layout - CSS Grid for stability */}
       <div className="hidden lg:grid grid-cols-[320px_1fr] h-full w-full">
-        {/* Sidebar - Fixed width grid column */}
-        <div className="border-r border-border overflow-hidden">
+        {/* Sidebar with glass effect - Fixed width grid column */}
+        <div className="border-r border-border overflow-hidden bg-white/90 dark:bg-slate-900/90 backdrop-blur-md">
           <Sidebar
-            user={displayUser}
+            user={user}
             chats={chats as any[]}
             folders={folders as any[]}
             activeChatId={activeChatId}
@@ -367,13 +360,18 @@ Would you like me to run a competitive analysis and show you better processing o
             onChatSelect={handleChatSelect}
             onFolderCreate={handleFolderCreate}
             onFolderDelete={handleFolderDelete}
+            onChatDelete={(chatId) => {
+              queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
+              refetchChats();
+            }}
+            chatsLoading={chatsLoading}
+            chatsError={chatsError}
             collapsed={false}
           />
         </div>
 
         {/* Chat Panel - Flexible grid column */}
         <div className="overflow-hidden flex flex-col">
-          
           {/* Chat Interface */}
           <div className="flex-1 overflow-hidden">
             <ChatInterface
@@ -383,40 +381,43 @@ Would you like me to run a competitive analysis and show you better processing o
             />
           </div>
         </div>
-
-
       </div>
 
       {/* Processing Modal */}
       <Dialog open={isProcessingStatement} onOpenChange={() => {}}>
         <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle className="flex items-center gap-2">
-              <FileText className="w-5 h-5" />
-              Analyzing Statement
-            </DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div className="flex items-center gap-3">
-              <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
-              <div className="flex-1">
-                <p className="text-sm font-medium">Processing your statement...</p>
-                <p className="text-xs text-muted-foreground">This may take a few moments</p>
+          <div>
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <FileText className="w-5 h-5" />
+                Analyzing Statement
+              </DialogTitle>
+              <DialogDescription>
+                Please wait while we process and analyze your merchant statement for insights and recommendations.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <Loader2 className="w-6 h-6 animate-spin text-blue-600" />
+                <div className="flex-1">
+                  <p className="text-sm font-medium">Processing your statement...</p>
+                  <p className="text-xs text-muted-foreground">This may take a few moments</p>
+                </div>
               </div>
-            </div>
-            <Progress value={processingProgress} className="w-full" />
-            <div className="text-xs text-muted-foreground space-y-1">
-              <div className="flex justify-between">
-                <span>Extracting data</span>
-                <span>{processingProgress < 30 ? '...' : '✓'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Analyzing patterns</span>
-                <span>{processingProgress < 60 ? '...' : '✓'}</span>
-              </div>
-              <div className="flex justify-between">
-                <span>Generating insights</span>
-                <span>{processingProgress < 90 ? '...' : '✓'}</span>
+              <Progress value={processingProgress} className="w-full" />
+              <div className="text-xs text-muted-foreground space-y-1">
+                <div className="flex justify-between">
+                  <span>Extracting data</span>
+                  <span>{processingProgress < 30 ? '...' : '✓'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Analyzing patterns</span>
+                  <span>{processingProgress < 60 ? '...' : '✓'}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Generating insights</span>
+                  <span>{processingProgress < 90 ? '...' : '✓'}</span>
+                </div>
               </div>
             </div>
           </div>

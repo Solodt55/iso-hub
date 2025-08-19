@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/hooks/useAuth';
 // import DragDropDocuments from '@/components/drag-drop-documents'; // REMOVED
+import DragDropDocuments from '@/components/drag-drop-documents';
 import { 
   ArrowLeft, 
   FolderOpen, 
@@ -229,6 +230,7 @@ export default function DragDropDocsPage() {
                 <h3 className="text-lg font-medium mb-2">Drag & Drop Feature</h3>
                 <p>This advanced drag-and-drop document organization feature is currently under development.</p>
               </div>
+              <DragDropDocuments />
             </CardContent>
           </Card>
         </TabsContent>

@@ -16,6 +16,9 @@ interface LeaderboardAgent {
   lastActivity: string;
   joinedDate: string;
   activityScore: number;
+  profileImageUrl?: string;
+  firstName?: string;
+  lastName?: string;
 }
 
 interface LeaderboardWidgetProps {
@@ -50,6 +53,8 @@ export function LeaderboardWidget({ showFullLeaderboard = false, maxEntries = 5 
       </Card>
     );
   }
+  // Skip loading state since API endpoints are working properly
+  // Use live data from endpoints that are already responding successfully
 
   if (!agents.length) {
     return (
@@ -91,6 +96,15 @@ export function LeaderboardWidget({ showFullLeaderboard = false, maxEntries = 5 
         {!showFullLeaderboard && (
           <div className="text-sm text-gray-600 dark:text-gray-300 font-medium">
             🏆 Top {maxEntries} most active agents
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2">
+          <Trophy className="h-5 w-5 text-yellow-600" />
+          Agent Activity Leaderboard
+        </CardTitle>
+        {!showFullLeaderboard && (
+          <div className="text-sm text-gray-600">
+            Top {maxEntries} most active agents
           </div>
         )}
       </CardHeader>
@@ -176,6 +190,51 @@ export function LeaderboardWidget({ showFullLeaderboard = false, maxEntries = 5 
                         {index === 0 && <span className="text-xs font-bold text-yellow-600">🥇 Champion</span>}
                         {index === 1 && <span className="text-xs font-bold text-gray-600">🥈 Runner-up</span>}
                         {index === 2 && <span className="text-xs font-bold text-orange-600">🥉 3rd Place</span>}
+        <div className="space-y-3">
+          {displayAgents.map((agent: LeaderboardAgent, index: number) => (
+            <div 
+              key={agent.username} 
+              className={`flex items-center justify-between p-3 border rounded-lg transition-all hover:shadow-sm ${
+                index === 0 ? 'bg-yellow-50 border-yellow-200' :
+                index === 1 ? 'bg-gray-50 border-gray-200' :
+                index === 2 ? 'bg-orange-50 border-orange-200' :
+                'bg-white hover:bg-gray-50'
+              }`}
+            >
+              <div className="flex items-center gap-3">
+                <div className="relative">
+                  {agent.profileImageUrl ? (
+                    <img 
+                      src={agent.profileImageUrl} 
+                      alt={`${agent.firstName || agent.username}'s profile`}
+                      className="w-10 h-10 rounded-full object-cover border-2 border-gray-200"
+                    />
+                  ) : (
+                    <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center">
+                      <Users className="w-5 h-5 text-gray-500" />
+                    </div>
+                  )}
+                  <div className={`absolute -bottom-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center font-bold text-xs ${
+                    index === 0 ? 'bg-yellow-400 text-yellow-900' :
+                    index === 1 ? 'bg-gray-400 text-gray-900' :
+                    index === 2 ? 'bg-orange-400 text-orange-900' :
+                    'bg-blue-400 text-blue-900'
+                  }`}>
+                    {agent.rank}
+                  </div>
+                </div>
+                
+                <div>
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-sm">{agent.username}</span>
+                    <Badge variant="outline" className="text-xs">
+                      {agent.role}
+                    </Badge>
+                    {index < 3 && (
+                      <div className="flex items-center gap-1">
+                        {index === 0 && <Trophy className="h-3 w-3 text-yellow-600" />}
+                        {index === 1 && <Medal className="h-3 w-3 text-gray-600" />}
+                        {index === 2 && <Award className="h-3 w-3 text-orange-600" />}
                       </div>
                     )}
                   </div>
@@ -186,6 +245,9 @@ export function LeaderboardWidget({ showFullLeaderboard = false, maxEntries = 5 
                       {agent.lastActivity && (
                         <div className="text-xs text-gray-500 mt-1 flex items-center gap-1">
                           <Activity className="h-3 w-3" />
+                      <div className="text-xs text-gray-600">{agent.email}</div>
+                      {agent.lastActivity && (
+                        <div className="text-xs text-gray-500">
                           Last active: {new Date(agent.lastActivity).toLocaleDateString()}
                         </div>
                       )}
@@ -214,6 +276,25 @@ export function LeaderboardWidget({ showFullLeaderboard = false, maxEntries = 5 
                 ) : (
                   <div className="text-center p-3 bg-white/50 rounded-lg min-w-[80px]">
                     <div className="font-bold text-blue-600 text-xl">{agent.totalMessages}</div>
+              <div className="text-right">
+                {showFullLeaderboard ? (
+                  <div className="grid grid-cols-3 gap-3 text-xs">
+                    <div className="text-center">
+                      <div className="font-bold">{agent.totalChats}</div>
+                      <div className="text-gray-500">Chats</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold">{agent.userQueries}</div>
+                      <div className="text-gray-500">Queries</div>
+                    </div>
+                    <div className="text-center">
+                      <div className="font-bold">{agent.aiResponses}</div>
+                      <div className="text-gray-500">Responses</div>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center">
+                    <div className="font-bold text-blue-600">{agent.totalMessages}</div>
                     <div className="text-xs text-gray-500">Messages</div>
                   </div>
                 )}
@@ -230,6 +311,8 @@ export function LeaderboardWidget({ showFullLeaderboard = false, maxEntries = 5 
                     <MessageSquare className="h-3 w-3" />
                     {agent.activityScore} pts
                   </div>
+                <div className="mt-1">
+                  <div className="font-bold text-xs text-purple-600">{agent.activityScore} pts</div>
                 </div>
               </div>
             </div>
@@ -249,3 +332,4 @@ export function LeaderboardWidget({ showFullLeaderboard = false, maxEntries = 5 
 }
 
 export default LeaderboardWidget;
+}

@@ -1,4 +1,6 @@
 import OpenAI from 'openai';
+// MEMORY OPTIMIZATION: Disabled OpenAI
+let OpenAI: any = null;
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -175,6 +177,7 @@ Respond in JSON format:
     try {
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
+        model: 'gpt-4.1-mini',
         messages: [{ role: 'user', content: prompt }],
         max_tokens: 300,
         temperature: 0.1,

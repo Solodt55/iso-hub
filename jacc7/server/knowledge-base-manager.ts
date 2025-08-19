@@ -168,6 +168,7 @@ export class KnowledgeBaseManager {
     try {
       const response = await openai.chat.completions.create({
         model: 'gpt-4o',
+        model: 'gpt-4.1-mini',
         messages: [
           {
             role: 'system',

@@ -102,6 +102,29 @@ export class FastResponseCache {
       <p>Would you like specific rates for a particular industry or processing volume?</p>`,
       responseTime: 40
     });
+
+    // Website, Tech, and Marketing Referral Response
+    this.responses.set('website integration', {
+      message: `<h2>🌐 Website & Tech Integration Services</h2>
+      <p><strong>For all website, tech, and marketing needs, please contact our in-house specialist:</strong></p>
+      <div style="background: #f8fafc; border: 2px solid #3b82f6; border-radius: 8px; padding: 16px; margin: 16px 0;">
+        <h3 style="color: #1e40af; margin: 0 0 8px 0;">Jeremy - Marketing & IT Team</h3>
+        <p style="margin: 4px 0;"><strong>📞 Phone:</strong> 765-338-8129</p>
+        <p style="margin: 4px 0;"><strong>✉️ Email:</strong> jeremy@keanonbiz.com</p>
+      </div>
+      <p><strong>Jeremy specializes in:</strong></p>
+      <ul>
+        <li>Website design and development</li>
+        <li>Payment gateway integrations</li>
+        <li>CRM system setup and automation</li>
+        <li>Marketing automation and AI tools</li>
+        <li>SEO optimization and digital marketing</li>
+        <li>E-commerce platform integrations</li>
+        <li>Custom technical solutions</li>
+      </ul>
+      <p>Jeremy will work directly with your client to implement the technical solutions they need!</p>`,
+      responseTime: 35
+    });
   }
   
   get(query: string): FastResponseData | null {
@@ -125,6 +148,21 @@ export class FastResponseCache {
   private isQueryMatch(query: string, templateKey: string): boolean {
     const queryWords = query.split(' ');
     const keyWords = templateKey.split(' ');
+    
+    // Special matching for specific tech implementation requests
+    if (templateKey === 'website integration') {
+      const specificTechKeywords = [
+        'website integration', 'payment gateway setup', 'crm setup', 'marketing automation setup',
+        'seo implementation', 'website design', 'ecommerce integration', 'shopify setup',
+        'wordpress integration', 'api integration', 'landing page creation', 'email marketing setup',
+        'need website', 'build website', 'create website', 'add payments', 'setup crm',
+        'implement seo', 'marketing automation', 'ecommerce platform'
+      ];
+      
+      return specificTechKeywords.some(keyword => 
+        query.toLowerCase().includes(keyword)
+      );
+    }
     
     // Check if query contains key concepts from template
     const matches = keyWords.filter(keyWord => 

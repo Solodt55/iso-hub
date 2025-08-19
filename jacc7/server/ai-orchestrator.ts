@@ -1,4 +1,6 @@
 import OpenAI from 'openai';
+// MEMORY OPTIMIZATION: Disabled OpenAI
+let OpenAI: any = null;
 import Anthropic from '@anthropic-ai/sdk';
 import { pineconeVectorService } from './pinecone-vector';
 import { advancedSearchService } from './advanced-search';
@@ -8,6 +10,8 @@ import { aiConfigService } from './ai-config-service';
 
 // the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025. Use this by default
 // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
+// the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released May 14, 2025. Use this by default
+// the newest OpenAI model is "gpt-4.1-mini" which was released May 13, 2024. do not change this unless explicitly requested by the user
 
 export interface AgentTask {
   id: string;
@@ -243,6 +247,7 @@ export class AIOrchestrator {
   private async executeQueryExpansion(payload: any, context: WorkflowContext): Promise<any> {
     const response = await this.anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-7-sonnet-20250219',
       max_tokens: 500,
       system: `You are a query expansion specialist for merchant services. Expand the user's query with relevant synonyms, related terms, and domain-specific terminology that would improve search results.`,
       messages: [{
@@ -289,6 +294,7 @@ export class AIOrchestrator {
 
     const response = await this.anthropic.messages.create({
       model: 'claude-sonnet-4-20250514',
+      model: 'claude-3-7-sonnet-20250219',
       max_tokens: 2000,
       system: `You are JACC, an expert AI assistant for merchant services and payment processing. Provide comprehensive, accurate responses based strictly on the provided document content. Always cite your sources and be specific about processing rates, fees, and requirements.`,
       messages: [{
@@ -326,6 +332,9 @@ export class AIOrchestrator {
       'analyze': 'claude-sonnet-4-20250514',
       'generate': 'claude-sonnet-4-20250514',
       'enhance': 'gpt-4o'
+      'analyze': 'claude-3-7-sonnet-20250219',
+      'generate': 'claude-3-7-sonnet-20250219',
+      'enhance': 'gpt-4.1-mini'
     };
     return modelMap[taskType] || 'unknown';
   }

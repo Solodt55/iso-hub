@@ -1,4 +1,6 @@
 import OpenAI from 'openai';
+// MEMORY OPTIMIZATION: Disabled OpenAI
+let OpenAI: any = null;
 import Anthropic from '@anthropic-ai/sdk';
 
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });

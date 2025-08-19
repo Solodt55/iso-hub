@@ -1,4 +1,6 @@
 import OpenAI from 'openai';
+// MEMORY OPTIMIZATION: Disabled OpenAI
+let OpenAI: any = null;
 
 export interface SemanticChunk {
   id: string;

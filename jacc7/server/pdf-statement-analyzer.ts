@@ -1,4 +1,7 @@
 import pdf from 'pdf-parse';
+// MEMORY OPTIMIZATION: Disabled pdf-parse (34MB)
+// import pdf from 'pdf-parse';
+let pdf: any = null;
 import OpenAI from 'openai';
 
 const openai = new OpenAI({
@@ -130,6 +133,7 @@ Return only valid JSON with all required fields:`;
     try {
       const response = await openai.chat.completions.create({
         model: "gpt-4o",
+        model: "gpt-4.1-mini",
         messages: [
           {
             role: "system",

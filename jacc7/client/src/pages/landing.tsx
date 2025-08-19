@@ -36,6 +36,10 @@ export default function Landing() {
   };
 
 
+  const fillCredentials = (email: string, password: string) => {
+    setEmail(email);
+    setPassword(password);
+  };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
@@ -132,6 +136,39 @@ export default function Landing() {
               </form>
 
 
+              {/* Demo Accounts */}
+              <div className="mt-6 pt-6 border-t">
+                <p className="text-sm text-center text-slate-600 mb-4">Demo Accounts (Click to auto-fill):</p>
+                <div className="space-y-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => fillCredentials("sarah@tracerco.com", "sales123")}
+                  >
+                    <User className="h-4 w-4 mr-2" />
+                    Sales Agent - sarah@tracerco.com
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => fillCredentials("admin@testcompany.com", "admin123")}
+                  >
+                    <Users className="h-4 w-4 mr-2" />
+                    Client Admin - admin@testcompany.com
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="w-full justify-start"
+                    onClick={() => fillCredentials("dev@jacc.com", "dev123")}
+                  >
+                    <Crown className="h-4 w-4 mr-2" />
+                    Dev Admin - dev@jacc.com
+                  </Button>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>

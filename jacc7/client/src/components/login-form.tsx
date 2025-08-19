@@ -4,6 +4,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useAuth } from "@/hooks/useAuth";
+import { useAuth } from "@/hooks/use-auth";
 import { Eye, EyeOff, User, Users, Shield } from "lucide-react";
 
 export function LoginForm() {
@@ -19,6 +20,37 @@ export function LoginForm() {
   };
 
 
+    loginMutation.mutate({ email, password });
+  };
+
+  const demoUsers = [
+    {
+      role: "Sales Agent",
+      email: "sarah@tracerco.com",
+      password: "sales123",
+      icon: User,
+      description: "Access sales tools and client management"
+    },
+    {
+      role: "Client Admin", 
+      email: "admin@testcompany.com",
+      password: "admin123",
+      icon: Users,
+      description: "Manage company settings and users"
+    },
+    {
+      role: "Dev Admin",
+      email: "dev@jacc.com", 
+      password: "dev123",
+      icon: Shield,
+      description: "Full system access and configuration"
+    }
+  ];
+
+  const fillCredentials = (email: string, password: string) => {
+    setEmail(email);
+    setPassword(password);
+  };
 
   return (
     <div className="w-full max-w-md mx-auto space-y-6">
@@ -42,6 +74,11 @@ export function LoginForm() {
                 id="email"
                 type="text"
                 placeholder="Enter your username (e.g., cburnell, admin)"
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -83,6 +120,35 @@ export function LoginForm() {
       </Card>
 
 
+      {/* Demo Credentials */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Demo Accounts</CardTitle>
+          <CardDescription>
+            Click any option below to auto-fill credentials for testing
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {demoUsers.map((user) => {
+            const IconComponent = user.icon;
+            return (
+              <Button
+                key={user.email}
+                variant="outline"
+                className="w-full justify-start h-auto p-4"
+                onClick={() => fillCredentials(user.email, user.password)}
+              >
+                <IconComponent className="h-5 w-5 mr-3 text-blue-600" />
+                <div className="text-left">
+                  <div className="font-medium">{user.role}</div>
+                  <div className="text-sm text-slate-500">{user.email}</div>
+                  <div className="text-xs text-slate-400">{user.description}</div>
+                </div>
+              </Button>
+            );
+          })}
+        </CardContent>
+      </Card>
     </div>
   );
 }

@@ -25,6 +25,7 @@ export const api = {
     getMessages: (chatId: string) => apiRequest('GET', `/api/chats/${chatId}/messages`),
     sendMessage: (chatId: string, data: SendMessageRequest) => 
       apiRequest('POST', `/api/chat/send`, { message: data.content, chatId }),
+      apiRequest('POST', `/api/chats/${chatId}/messages`, data),
   },
 
   // Folder operations

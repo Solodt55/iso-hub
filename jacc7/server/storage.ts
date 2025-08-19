@@ -1,9 +1,9 @@
-import { 
-  users, 
-  folders, 
-  chats, 
-  messages, 
-  documents, 
+import {
+  users,
+  folders,
+  chats,
+  messages,
+  documents,
   favorites,
   apiKeys,
   userChatLogs,
@@ -14,7 +14,10 @@ import {
   userSessions,
   promptUsageLog,
   adminSettings,
-  type User, 
+  personalDocuments,
+  personalFolders,
+
+  type User,
   type UpsertUser,
   type InsertUser,
   type Folder,
@@ -44,8 +47,10 @@ import {
   type AdminSetting,
   type InsertAdminSetting
 } from "@shared/schema";
+
 import { db } from "./db";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, inArray, gte } from "drizzle-orm";
+
 
 // Interface for storage operations
 export interface IStorage {
@@ -54,6 +59,7 @@ export interface IStorage {
   getUserByUsername(username: string): Promise<User | undefined>;
   getUserByEmail(email: string): Promise<User | undefined>;
   createUser(user: InsertUser): Promise<User>;
+  updateUser(id: string, updates: Partial<User>): Promise<User>;
   upsertUser(user: UpsertUser): Promise<User>;
   
   // API Key operations
@@ -69,6 +75,7 @@ export interface IStorage {
   getChat(id: string): Promise<Chat | undefined>;
   updateChat(id: string, updates: Partial<Chat>): Promise<Chat>;
   updateChatTitle(id: string, title: string): Promise<Chat>;
+  updateChatTitle(chatId: string, title: string): Promise<void>;
   deleteChat(id: string): Promise<void>;
   
   // Message operations
@@ -87,6 +94,14 @@ export interface IStorage {
   createDocument(document: InsertDocument): Promise<Document>;
   getDocument(id: string): Promise<Document | undefined>;
   deleteDocument(id: string): Promise<void>;
+  
+  // Personal document operations
+  getUserPersonalDocuments(userId: string): Promise<any[]>;
+  createPersonalDocument(document: any): Promise<any>;
+  getPersonalDocument(id: string): Promise<any | undefined>;
+  deletePersonalDocument(id: string): Promise<void>;
+  getUserPersonalFolders(userId: string): Promise<any[]>;
+  createPersonalFolder(folder: any): Promise<any>;
   
   // Favorite operations
   getUserFavorites(userId: string): Promise<Favorite[]>;
@@ -114,6 +129,12 @@ export interface IStorage {
   getAllUsers(): Promise<User[]>;
   deleteUser(userId: string): Promise<void>;
   getAllDocuments(): Promise<Document[]>;
+  // Admin operations
+  getUsers(): Promise<User[]>;
+  getAllUsers(): Promise<User[]>;
+  deleteUser(userId: string): Promise<void>;
+  getAllDocuments(): Promise<Document[]>;
+  updateDocument(documentId: string, updates: any): Promise<Document>;
   updateDocumentPermissions(documentId: string, permissions: any): Promise<Document>;
   getAllPrompts(): Promise<any[]>;
   createPrompt(prompt: any): Promise<any>;
@@ -121,6 +142,15 @@ export interface IStorage {
   deletePrompt(promptId: string): Promise<void>;
   getAdminSettings(): Promise<any>;
   updateAdminSettings(settings: any): Promise<any>;
+  
+  // Training and feedback
+  createTrainingFeedback(feedback: any): Promise<any>;
+  
+  // Analytics
+  getChatCount(): Promise<number>;
+  getDocumentCount(): Promise<number>;
+  getActiveUserCount(): Promise<number>;
+  getRecentActivity(): Promise<any[]>;
 
   // Simplified admin operations for existing data
   getAllChats(): Promise<Chat[]>;
@@ -148,6 +178,18 @@ export class DatabaseStorage implements IStorage {
     const [user] = await db
       .insert(users)
       .values(userData)
+      .returning();
+    return user;
+  }
+
+  async updateUser(id: string, updates: Partial<User>): Promise<User> {
+    const [user] = await db
+      .update(users)
+      .set({
+        ...updates,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id))
       .returning();
     return user;
   }
@@ -226,35 +268,35 @@ export class DatabaseStorage implements IStorage {
     return chat;
   }
 
-  async updateChatTitle(id: string, title: string): Promise<Chat> {
-    const [chat] = await db
-      .update(chats)
-      .set({ title, updatedAt: new Date() })
-      .where(eq(chats.id, id))
-      .returning();
-    return chat;
-  }
-
-  async deleteChat(id: string): Promise<void> {
-    await db.delete(chats).where(eq(chats.id, id));
-  }
-
-  // Message operations
-  async getChatMessages(chatId: string): Promise<Message[]> {
-    const result = await db
-      .select()
-      .from(messages)
-      .where(eq(messages.chatId, chatId))
-      .orderBy(messages.createdAt);
-    
-    console.log(`Database: Found ${result.length} messages for chat ${chatId}`);
-    if (result.length > 0) {
-      console.log(`First message: ${result[0].content.substring(0, 50)}...`);
-      console.log(`Last message: ${result[result.length - 1].content.substring(0, 50)}...`);
+    async updateChatTitle(id: string, title: string): Promise<Chat> {
+      const [chat] = await db
+        .update(chats)
+        .set({ title, updatedAt: new Date() })
+        .where(eq(chats.id, id))
+        .returning();
+      return chat;
     }
-    
-    return result;
-  }
+
+    async deleteChat(id: string): Promise<void> {
+      await db.delete(chats).where(eq(chats.id, id));
+    }
+
+    // Message operations
+    async getChatMessages(chatId: string): Promise<Message[]> {
+      const result = await db
+        .select()
+        .from(messages)
+        .where(eq(messages.chatId, chatId))
+        .orderBy(messages.createdAt);
+      
+      console.log(`Database: Found ${result.length} messages for chat ${chatId}`);
+      if (result.length > 0) {
+        console.log(`First message: ${result[0].content.substring(0, 50)}...`);
+        console.log(`Last message: ${result[result.length - 1].content.substring(0, 50)}...`);
+      }
+      
+      return result;
+    }
 
   async createMessage(messageData: InsertMessage): Promise<Message> {
     const [message] = await db
@@ -333,6 +375,53 @@ export class DatabaseStorage implements IStorage {
       .where(eq(documents.id, id));
   }
 
+  // Personal document operations
+  async getUserPersonalDocuments(userId: string): Promise<any[]> {
+    return await db
+      .select()
+      .from(personalDocuments)
+      .where(eq(personalDocuments.userId, userId))
+      .orderBy(desc(personalDocuments.createdAt));
+  }
+
+  async createPersonalDocument(documentData: any): Promise<any> {
+    const [document] = await db
+      .insert(personalDocuments)
+      .values(documentData)
+      .returning();
+    return document;
+  }
+
+  async getPersonalDocument(id: string): Promise<any | undefined> {
+    const [document] = await db
+      .select()
+      .from(personalDocuments)
+      .where(eq(personalDocuments.id, id));
+    return document || undefined;
+  }
+
+  async deletePersonalDocument(id: string): Promise<void> {
+    await db
+      .delete(personalDocuments)
+      .where(eq(personalDocuments.id, id));
+  }
+
+  async getUserPersonalFolders(userId: string): Promise<any[]> {
+    return await db
+      .select()
+      .from(personalFolders)
+      .where(eq(personalFolders.userId, userId))
+      .orderBy(personalFolders.name);
+  }
+
+  async createPersonalFolder(folderData: any): Promise<any> {
+    const [folder] = await db
+      .insert(personalFolders)
+      .values(folderData)
+      .returning();
+    return folder;
+  }
+
   // Favorite operations
   async getUserFavorites(userId: string): Promise<Favorite[]> {
     return await db
@@ -384,6 +473,22 @@ export class DatabaseStorage implements IStorage {
   async getUserPrompts(userId: string): Promise<UserPrompt[]> {
     const prompts = await db.select().from(userPrompts).where(eq(userPrompts.userId, userId));
     return prompts;
+    try {
+      const prompts = await db.select({
+        id: userPrompts.id,
+        userId: userPrompts.userId,
+        name: userPrompts.name,
+        description: userPrompts.description,
+        category: userPrompts.category,
+        content: userPrompts.content,
+        createdAt: userPrompts.createdAt,
+        updatedAt: userPrompts.updatedAt
+      }).from(userPrompts).where(eq(userPrompts.userId, userId));
+      return prompts;
+    } catch (error) {
+      console.log("UserPrompts table not yet migrated, returning empty array");
+      return [];
+    }
   }
 
   async createUserPrompt(promptData: InsertUserPrompt): Promise<UserPrompt> {
@@ -420,6 +525,25 @@ export class DatabaseStorage implements IStorage {
     
     const [prompt] = await query;
     return prompt;
+    try {
+      // Return the first prompt for the user (schema doesn't have isActive or isDefault)
+      let query = db.select().from(userPrompts)
+        .where(eq(userPrompts.userId, userId));
+      
+      if (category) {
+        query = db.select().from(userPrompts)
+          .where(and(
+            eq(userPrompts.userId, userId),
+            eq(userPrompts.category, category)
+          ));
+      }
+      
+      const results = await query.limit(1);
+      return results[0];
+    } catch (error) {
+      console.error('Error fetching user default prompt:', error);
+      return undefined;
+    }
   }
 
   // Admin operations
@@ -469,6 +593,51 @@ export class DatabaseStorage implements IStorage {
     await db.delete(userPrompts).where(eq(userPrompts.id, promptId));
   }
 
+  // Missing method implementations
+  async getUsers(): Promise<User[]> {
+    return await db.select().from(users).orderBy(users.createdAt);
+  }
+
+  async updateDocument(documentId: string, updates: any): Promise<Document> {
+    const [document] = await db
+      .update(documents)
+      .set({ ...updates, updatedAt: new Date() })
+      .where(eq(documents.id, documentId))
+      .returning();
+    return document;
+  }
+
+  async createTrainingFeedback(feedback: any): Promise<any> {
+    // For now, return the feedback as-is since we don't have a dedicated table
+    return { id: crypto.randomUUID(), ...feedback, createdAt: new Date() };
+  }
+
+  async getChatCount(): Promise<number> {
+    const result = await db.select({ count: chats.id }).from(chats);
+    return result.length;
+  }
+
+  async getDocumentCount(): Promise<number> {
+    const result = await db.select({ count: documents.id }).from(documents);
+    return result.length;
+  }
+
+  async getActiveUserCount(): Promise<number> {
+    const result = await db.select({ count: users.id }).from(users).where(eq(users.isActive, true));
+    return result.length;
+  }
+
+  async getRecentActivity(): Promise<any[]> {
+    // Get recent chats and messages as activity
+    const recentChats = await db.select().from(chats).orderBy(desc(chats.createdAt)).limit(10);
+    const recentMessages = await db.select().from(messages).orderBy(desc(messages.createdAt)).limit(10);
+    
+    return [
+      ...recentChats.map(chat => ({ type: 'chat', ...chat })),
+      ...recentMessages.map(message => ({ type: 'message', ...message }))
+    ].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 20);
+  }
+
   async getAdminSettings(): Promise<any> {
     const [settings] = await db.select().from(adminSettings).where(eq(adminSettings.id, 'default'));
     return settings || {
@@ -502,6 +671,7 @@ export class DatabaseStorage implements IStorage {
         firstName: users.firstName,
         lastName: users.lastName,
         profileImageUrl: users.profileImageUrl,
+        role: users.role,
         totalChats: userStats.totalChats,
         totalMessages: userStats.totalMessages,
         calculationsPerformed: userStats.calculationsPerformed,
@@ -514,6 +684,12 @@ export class DatabaseStorage implements IStorage {
       })
       .from(users)
       .leftJoin(userStats, eq(users.id, userStats.userId))
+      .where(
+        and(
+          inArray(users.role, ['client', 'manager', 'sales-agent']),
+          gte(userStats.totalPoints, 1) // Only show users with some activity
+        )
+      )
       .orderBy(desc(userStats.totalPoints))
       .limit(limit);
 

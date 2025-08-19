@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Link } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -35,14 +35,12 @@ import {
   ExternalLink,
   Shield,
   HelpCircle,
-  Loader2
+  Trophy
 } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
 
 import type { User, Chat, Folder as FolderType } from "@shared/schema";
 import { cn } from "@/lib/utils";
-import Loader from "./loader";
-import ConnectionStatus from "./connection-status";
 
 // Saved Documents Section Component
 function SavedDocumentsSection() {
@@ -82,7 +80,6 @@ function SavedDocumentsSection() {
           {savedDocuments.length}
         </Badge>
       </div>
-      
       {savedDocuments.length === 0 ? (
         <div className="text-xs text-slate-400 italic p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
           No saved documents yet. Export AI responses to save them here.
@@ -148,7 +145,6 @@ function SavedDocumentsSection() {
   );
 }
 
-
 interface SidebarProps {
   user?: User;
   chats: Chat[];
@@ -159,6 +155,8 @@ interface SidebarProps {
   onFolderCreate: (name: string, parentId?: string, color?: string) => void;
   onFolderDelete?: (folderId: string) => void;
   onChatDelete?: (chatId: string) => void;
+  chatsLoading?: boolean;
+  chatsError?: any;
   collapsed?: boolean;
 }
 
@@ -172,73 +170,41 @@ export default function Sidebar({
   onFolderCreate,
   onFolderDelete,
   onChatDelete,
+  chatsLoading = false,
+  chatsError = null,
   collapsed = false
 }: SidebarProps) {
-  // State to store ISO-Hub user data received via postMessage
-  const [isoHubUser, setIsoHubUser] = useState<any>(null);
-  
-  // Listen for ISO-Hub auth data from parent window
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.data.type === 'ISO_HUB_AUTH') {
-        console.log('Received ISO-Hub auth data:', event.data);
-        setIsoHubUser(event.data.user);
-        
-        // Send confirmation back to ISO-Hub
-        try {
-          window.parent.postMessage({
-            type: 'JACC_AUTH_RECEIVED',
-            success: true,
-            user: event.data.user
-          }, '*');
-          console.log('Sent confirmation to ISO-Hub that auth data was received');
-        } catch (err) {
-          console.error('Could not send confirmation to ISO-Hub:', err);
-        }
-      }
-    };
-
-    window.addEventListener('message', handleMessage);
-    
-    // Send ready message to ISO-Hub
-    try {
-      window.parent.postMessage({
-        type: 'JACC_READY',
-        message: 'JACC is ready to receive auth data'
-      }, '*');
-      console.log('Sent ready message to ISO-Hub');
-    } catch (err) {
-      console.error('Could not send ready message to ISO-Hub:', err);
-    }
-    
-    return () => window.removeEventListener('message', handleMessage);
-  }, []);
-  
-  // Use ISO-Hub user data if available, otherwise fall back to JACC user
-  const displayUser = isoHubUser || user;
-  
-  console.log('ISO-Hub user from postMessage:', isoHubUser);
-  console.log('JACC user:', user);
-  console.log('Display user:', displayUser);
-  console.log('ISO-Hub user keys:', isoHubUser ? Object.keys(isoHubUser) : 'No ISO-Hub user');
-  console.log('ISO-Hub user email:', isoHubUser?.email);
-  console.log('ISO-Hub user first_name:', isoHubUser?.first_name);
-  console.log('ISO-Hub user last_name:', isoHubUser?.last_name);
-
-  console.log("Sidebar Debug:", {
-    chatsCount: chats.length,
-    hasOnChatDelete: !!onChatDelete,
-    onChatDeleteType: typeof onChatDelete
-  });
-
-  console.log('jacc user',user);
   const [expandedFolders, setExpandedFolders] = useState<Set<string>>(new Set());
   const [creatingFolder, setCreatingFolder] = useState(false);
   const [newFolderName, setNewFolderName] = useState("");
   const [showAllChats, setShowAllChats] = useState(false);
   const [showAllFolders, setShowAllFolders] = useState(false);
 
-  // Remove handleLogout function - logout is handled by ISO-Hub
+  const handleLogout = async () => {
+    try {
+      await fetch("/api/logout", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      // Clear any local storage/session data
+      localStorage.clear();
+      sessionStorage.clear();
+      // Redirect to login screen
+      window.location.href = "/login";
+      // Redirect to root which will show login screen
+      window.location.href = "/";
+    } catch (error) {
+      console.error("Logout error:", error);
+      // Still clear data and redirect even if logout request fails
+      localStorage.clear();
+      sessionStorage.clear();
+      window.location.href = "/login";
+      window.location.href = "/";
+    }
+  };
 
   const toggleFolder = (folderId: string) => {
     const newExpanded = new Set(expandedFolders);
@@ -268,11 +234,27 @@ export default function Sidebar({
   };
 
   const recentChats = chats
-    .filter(chat => chat.isActive)
-    .sort((a, b) => new Date(b.updatedAt!).getTime() - new Date(a.updatedAt!).getTime());
+    .filter(chat => chat.id && (chat.isActive !== false)) // Show all chats except explicitly inactive ones
+    .sort((a, b) => {
+      const aTime = new Date(a.updatedAt || a.createdAt).getTime();
+      const bTime = new Date(b.updatedAt || b.createdAt).getTime();
+      return bTime - aTime;
+    });
 
   const displayedChats = showAllChats ? recentChats : recentChats.slice(0, 7);
   const displayedFolders = showAllFolders ? folders : folders.slice(0, 7);
+
+  // Debug logging
+  console.log("🔍 Sidebar Debug:", {
+    chatsCount: chats.length,
+    hasOnChatDelete: !!onChatDelete,
+    onChatDeleteType: typeof onChatDelete,
+    recentChatsCount: chats.filter(chat => chat.id).length,
+    firstChat: chats[0],
+    chatTitles: chats.map(c => ({ id: c.id.substring(0, 8), title: c.title })),
+    displayedChatsLength: displayedChats.length,
+    recentChatsLength: recentChats.length
+  });
 
   if (collapsed) {
     return (
@@ -314,10 +296,14 @@ export default function Sidebar({
           ))}
         </div>
 
-        {/* Replace logout button with connection status */}
-        <div className="flex items-center justify-center">
-          <ConnectionStatus isConnected={true} />
-        </div>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={handleLogout}
+          className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+        >
+          <LogOut className="w-4 h-4" />
+        </Button>
       </div>
     );
   }
@@ -328,20 +314,16 @@ export default function Sidebar({
       <div className="p-4 border-b border-slate-200 dark:border-slate-700">
         <div className="flex items-center space-x-3">
           <Avatar className="w-10 h-10">
-            <AvatarImage src={displayUser?.profileImageUrl || ""} alt={displayUser?.firstName || displayUser?.first_name || ""} />
+            <AvatarImage src={user?.profileImageUrl || ""} alt={user?.firstName || ""} />
             <AvatarFallback className="navy-primary text-white">
-              {displayUser?.firstName?.[0] || displayUser?.first_name?.[0] || displayUser?.email?.[0] || "U"}
+              {user?.firstName?.[0] || user?.email?.[0] || "U"}
             </AvatarFallback>
           </Avatar>
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-slate-900 dark:text-white truncate">
-              {displayUser?.firstName && displayUser?.lastName 
-                ? `${displayUser.firstName} ${displayUser.lastName}`
-                : displayUser?.first_name && displayUser?.last_name
-                ? `${displayUser.first_name} ${displayUser.last_name}`
-                : displayUser?.name
-                ? displayUser.name
-                : displayUser?.email || "User"
+              {user?.firstName && user?.lastName 
+                ? `${user.firstName} ${user.lastName}`
+                : user?.email || "User"
               }
             </h3>
             <p className="text-sm text-slate-500 dark:text-slate-400">
@@ -360,10 +342,20 @@ export default function Sidebar({
               {(user?.role === 'admin' || user?.role === 'client-admin' || user?.role === 'dev-admin') && (
                 <>
                   <DropdownMenuItem asChild>
-                    <Link href="/admin-control-center" className="flex items-center">
+                    <a href="/admin-control-center" className="flex items-center">
                       <Shield className="w-4 h-4 mr-2" />
-                      Admin Control Center
-                    </Link>
+                      JACC Admin Control Center
+                    </a>
+                  </DropdownMenuItem>
+                </>
+              )}
+              {user?.role === 'admin' && (
+                <>
+                  <DropdownMenuItem asChild>
+                    <a href="/admin/training" className="flex items-center">
+                      <Brain className="w-4 h-4 mr-2" />
+                      AI Training
+                    </a>
                   </DropdownMenuItem>
                   <DropdownMenuItem disabled className="relative">
                     <div className="flex items-center opacity-50">
@@ -376,24 +368,34 @@ export default function Sidebar({
                   </DropdownMenuItem>
                 </>
               )}
-              {/* Show connection status instead of logout */}
-              <DropdownMenuItem disabled className="opacity-100">
-                <ConnectionStatus isConnected={true} />
+              <DropdownMenuItem onClick={handleLogout}>
+                <LogOut className="w-4 h-4 mr-2" />
+                Sign Out
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
       </div>
-
       {/* New Chat Button */}
       <div className="p-4 space-y-2">
-        <Button
-          onClick={onNewChat}
-          className="w-full navy-primary text-white hover:opacity-90 font-medium"
-        >
-          <Plus className="w-4 h-4 mr-2" />
-          New Chat
-        </Button>
+        <div className="flex gap-2">
+          <Button
+            onClick={onNewChat}
+            className="flex-1 navy-primary text-white hover:opacity-90 font-medium"
+          >
+            <Plus className="w-4 h-4 mr-2" />
+            New Chat
+          </Button>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => window.location.reload()}
+            className="flex-shrink-0"
+            title="Refresh chats"
+          >
+            <RotateCcw className="w-4 h-4" />
+          </Button>
+        </div>
         
         <div className="relative group">
           <Button
@@ -427,30 +429,50 @@ export default function Sidebar({
         </Button>
 
       </div>
-
       {/* Scrollable Content */}
       <ScrollArea className="flex-1 px-4">
         {/* Recent Chats Section */}
         <div className="mb-6">
-          <h4 className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide mb-3">
-            Recent Chats
-          </h4>
+          <div className="flex items-center justify-between mb-3">
+            <h4 className="text-xs font-semibold text-white dark:text-slate-400 uppercase tracking-wide">
+              Recent Chats
+            </h4>
+            <Badge variant="secondary" className="text-xs">
+              {displayedChats.length}
+            </Badge>
+          </div>
 
-          
-          <div className="space-y-1">
-            {displayedChats.map((chat) => (
-              <div
-                key={chat.id}
-                className={cn(
-                  "group flex items-center p-2 rounded-lg transition-colors border",
-                  activeChatId === chat.id 
+          {chatsLoading ? (
+            <div className="text-xs dark:text-slate-400 italic p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-[#23252f] flex items-center">
+              <div className="animate-spin rounded-full h-3 w-3 border-b-2 border-blue-600 mr-2"></div>
+              Loading chats...
+            </div>
+          ) : chatsError ? (
+            <div className="text-xs text-red-500 italic p-2 bg-red-50 dark:bg-red-900/20 rounded-lg">
+              Error loading chats: {chatsError.message || 'Unknown error'}
+            </div>
+          ) : displayedChats.length === 0 ? (
+            <div className="text-xs dark:text-slate-400 italic p-2 bg-slate-50 dark:bg-slate-800/50 rounded-lg text-[#23252f]">
+              No recent chats yet. Start a conversation above.
+            </div>
+          ) : (
+            <div className="space-y-1">
+              {displayedChats.map((chat) => (
+                <div
+                  key={chat.id}
+                  className={cn(
+                    "group flex items-center p-2 rounded-lg transition-colors border cursor-pointer w-full max-w-full overflow-hidden",
+                    activeChatId === chat.id 
                     ? "bg-slate-100 dark:bg-slate-800 border-blue-200" 
                     : "hover:bg-slate-50 dark:hover:bg-slate-800/50 border-transparent"
                 )}
               >
                 <div 
-                  className="flex items-center space-x-3 flex-1 min-w-0 cursor-pointer group"
-                  onClick={() => onChatSelect(chat.id)}
+                  className="flex items-center space-x-2 flex-1 min-w-0 cursor-pointer group overflow-hidden"
+                  onClick={() => {
+                    console.log('Chat clicked:', chat.id, chat.title);
+                    onChatSelect(chat.id);
+                  }}
                 >
                   <MessageSquare className={cn(
                     "w-4 h-4 flex-shrink-0",
@@ -459,7 +481,41 @@ export default function Sidebar({
                       : "text-slate-400 dark:text-slate-500"
                   )} />
                   
-                  {/* Trash can icon for delete */}
+                  <span 
+                    className={cn(
+                      "text-sm truncate flex-1 overflow-hidden whitespace-nowrap",
+                      activeChatId === chat.id 
+                        ? "font-medium" 
+                        : ""
+                    )}
+                    style={{ 
+                      color: '#050000d6',
+                      maxWidth: 'calc(100% - 80px)', // More space for icons
+                      textOverflow: 'ellipsis'
+                    }}
+                  >
+                    {(() => {
+                      // Clean the title by removing newlines and extra content
+                      const cleanTitle = chat.title 
+                        ? chat.title.split('\n')[0].trim() // Take only first line
+                            .replace(/📋.*$/, '') // Remove document indicators
+                            .replace(/📄.*$/, '') // Remove file indicators  
+                            .trim()
+                        : '';
+                      
+                      return cleanTitle && cleanTitle !== "New Chat" && cleanTitle !== "Untitled Chat" 
+                        ? cleanTitle 
+                        : `Chat ${chat.id.substring(0, 8)}...`;
+                    })()}
+                  </span>
+                  
+                  {activeChatId === chat.id && (
+                    <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
+                  )}
+                </div>
+
+                {/* Compact action buttons */}
+                <div className="flex items-center gap-1 flex-shrink-0">
                   <button
                     onClick={async (e) => {
                       e.stopPropagation();
@@ -471,8 +527,8 @@ export default function Sidebar({
                           });
                           
                           if (response.ok) {
-                            // Use the chat delete callback to refresh the list
                             onChatDelete?.(chat.id);
+                            window.location.reload();
                           } else {
                             alert("Failed to delete chat");
                           }
@@ -481,67 +537,12 @@ export default function Sidebar({
                         }
                       }
                     }}
-                    className="opacity-30 hover:opacity-100 transition-opacity p-1 hover:bg-red-100 dark:hover:bg-red-900/20 rounded"
+                    className="opacity-0 group-hover:opacity-100 transition-opacity p-1 hover:bg-red-100 dark:hover:bg-red-900/20 rounded w-6 h-6 flex items-center justify-center flex-shrink-0"
                     title="Delete this chat"
                   >
                     <Trash2 className="w-3 h-3 text-red-500 hover:text-red-700" />
                   </button>
-                  
-                  <span className={cn(
-                    "text-sm truncate",
-                    activeChatId === chat.id 
-                      ? "text-slate-900 dark:text-white font-medium" 
-                      : "text-slate-700 dark:text-slate-300"
-                  )}>
-                    {chat.title && chat.title !== "New Chat" && chat.title !== "Untitled Chat" 
-                      ? chat.title 
-                      : "New Chat"}
-                  </span>
-                  {activeChatId === chat.id && (
-                    <div className="w-2 h-2 bg-green-500 rounded-full flex-shrink-0" />
-                  )}
                 </div>
-                
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="w-6 h-6 text-slate-400 hover:text-slate-600"
-                      onClick={(e) => e.stopPropagation()}
-                    >
-                      <MoreVertical className="w-3 h-3" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem 
-                      onClick={async (e) => {
-                        e.stopPropagation();
-                        if (confirm("Are you sure you want to delete this chat?")) {
-                          try {
-                            const response = await fetch(`/api/chats/${chat.id}`, {
-                              method: "DELETE",
-                              credentials: "include",
-                            });
-                            
-                            if (response.ok) {
-                              // Use the chat delete callback to refresh the list
-                              onChatDelete?.(chat.id);
-                            } else {
-                              alert("Failed to delete chat");
-                            }
-                          } catch (error) {
-                            alert("Error deleting chat");
-                          }
-                        }
-                      }}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      <Trash2 className="w-4 h-4 mr-2" />
-                      Delete Chat
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
               </div>
             ))}
             
@@ -560,6 +561,7 @@ export default function Sidebar({
               </Button>
             )}
           </div>
+        )}
         </div>
 
         {/* Chat Organization Folders */}
@@ -681,10 +683,14 @@ export default function Sidebar({
           </h4>
           <div className="space-y-1">
             <div className="relative group">
-              <Link href="/prompt-customization" className="flex items-center space-x-3 p-2 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
-                <Brain className="w-4 h-4 text-slate-700 dark:text-slate-300" />
-                <span className="text-sm text-slate-700 dark:text-slate-300">AI Prompts</span>
-              </Link>
+              <div className="flex items-center space-x-3 p-2 rounded-lg cursor-not-allowed opacity-60 transition-colors">
+                <Brain className="w-4 h-4 text-gray-400" />
+                <span className="text-sm text-gray-500">AI Prompts</span>
+                <span className="text-xs bg-gray-100 text-gray-500 px-2 py-1 rounded-full ml-auto">Coming Soon</span>
+              </div>
+              <span className="absolute -top-8 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none whitespace-nowrap z-10">
+                Coming Soon
+              </span>
             </div>
             <Link 
               href="/help" 
@@ -741,17 +747,18 @@ export default function Sidebar({
             Knowledge Base
           </h4>
           <div className="space-y-1">
-            <Link 
+            <a 
               href="/documents" 
               className="flex items-center space-x-3 p-2 hover:bg-slate-50 dark:hover:bg-slate-800/50 rounded-lg cursor-pointer transition-colors"
             >
               <FileSearch className="w-4 h-4 text-blue-500" />
               <span className="text-sm text-slate-700 dark:text-slate-300">Document Center</span>
-            </Link>
+            </a>
           </div>
         </div>
-      </ScrollArea>
 
+
+      </ScrollArea>
       {/* Footer */}
       <div className="p-4 border-t border-slate-200 dark:border-slate-700">
         <div className="flex items-center justify-between">
@@ -759,7 +766,14 @@ export default function Sidebar({
             <div className="w-2 h-2 bg-green-500 rounded-full" />
             <span className="text-xs text-slate-500 dark:text-slate-400">Online</span>
           </div>
-          {/* Remove logout button from footer */}
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={handleLogout}
+            className="w-8 h-8 text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
+          >
+            <LogOut className="w-4 h-4" />
+          </Button>
         </div>
       </div>
     </div>

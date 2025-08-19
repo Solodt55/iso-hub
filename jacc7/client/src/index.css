@@ -2,6 +2,14 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Line clamping utility */
+.line-clamp-2 {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
 /* Global mobile overflow fix - ENHANCED VERSION */
 @media (max-width: 767px) {
   html {
@@ -66,46 +74,299 @@
     box-shadow: 0 -4px 6px -1px rgb(0 0 0 / 0.1), 0 -2px 4px -2px rgb(0 0 0 / 0.1);
   }
   
-  /* Mobile chat input optimizations */
-  .chat-glow-container form {
-    flex-wrap: nowrap !important;
-    gap: 0.25rem !important;
-    align-items: flex-start !important;
+  /* Mobile-optimized quick action cards */
+  .mobile-card-grid {
+    padding: 0 0.25rem;
   }
   
-  .chat-glow-container form > div:first-child {
-    flex: 1 !important;
-    min-width: 0 !important;
+  /* Improved touch targets for mobile */
+  .touch-target {
+    min-height: 44px;
+    min-width: 44px;
   }
   
-  /* Stack buttons vertically on mobile with proper alignment */
-  @media (max-width: 767px) {
-    .chat-glow-container form > div:last-child {
-      align-self: flex-end !important;
-      min-height: 60px !important;
-      display: flex !important;
-      flex-direction: column !important;
-      justify-content: flex-end !important;
+  /* Mobile chat interface compact spacing */
+  .mobile-container {
+    padding: 0 0.5rem;
+  }
+  
+  /* Prevent viewport zoom on input focus */
+  input[type="text"], 
+  input[type="email"], 
+  input[type="password"], 
+  textarea {
+    font-size: 16px;
+  }
+  
+  /* Enhanced mobile responsiveness */
+  .chat-interface-mobile {
+    padding: 0.5rem;
+  }
+  
+  /* Compact mobile typography */
+  @media (max-width: 640px) {
+    .mobile-text-compact {
+      line-height: 1.3;
+      font-size: 0.875rem;
     }
   }
   
-  /* Prevent horizontal scrolling on any element */
-  .no-horizontal-scroll {
-    overflow-x: hidden !important;
-    max-width: 100vw !important;
+  /* Mobile chat input optimizations */
+  .chat-glow-container {
+    width: 100% !important;
+    max-width: 100% !important;
   }
   
-  /* Main content container */
-  #root, .app-container {
-    overflow-x: hidden !important;
-    width: 100vw !important;
-    max-width: 100vw !important;
+  .chat-glow-container form {
+    flex-wrap: nowrap !important;
+    gap: 0.25rem !important;
+    align-items: center !important;
+    width: 100% !important;
+    max-width: 100% !important;
   }
+  
+  /* Ensure buttons don't get cut off on mobile */
+  .chat-glow-container button {
+    flex-shrink: 0 !important;
+    width: 2.75rem !important;
+    height: 2.75rem !important;
+    max-width: 2.75rem !important;
+    min-width: 2.75rem !important;
+    white-space: nowrap !important;
+  }
+  
+  .chat-glow-container textarea {
+    min-width: 0 !important;
+    flex: 1 !important;
+    word-wrap: break-word !important;
+    width: auto !important;
+    max-width: calc(100% - 3.5rem) !important;
+  }
+
+  /* Mobile spacing adjustments */
+  .mobile-layout {
+    min-height: 100vh;
+    padding-bottom: 80px; /* Space for bottom nav */
+  }
+
+  /* Better mobile padding and viewport usage */
+  @media (max-width: 640px) {
+    body {
+      padding-bottom: env(safe-area-inset-bottom);
+    }
+    
+    /* Full height mobile layout */
+    .mobile-full-height {
+      min-height: 100vh;
+      min-height: 100dvh; /* Dynamic viewport height for better mobile support */
+    }
+    
+    /* Mobile container improvements */
+    .mobile-container {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      min-height: calc(100vh - 120px); /* Subtract bottom nav height + extra padding */
+      min-height: calc(100dvh - 120px);
+      padding-bottom: 1rem;
+    }
+
+
+  }
+}
+
+/* Navy and Green color variables */
+:root {
+  --navy-600: #003D7A;
+  --green-400: #16A34A;
+}
+
+/* Chat input glowing border animation */
+@keyframes glowingBorder {
+  0% { 
+    border-color: var(--navy-600);
+    box-shadow: 0 0 10px rgba(0, 61, 122, 0.3);
+  }
+  25% { 
+    border-color: var(--green-400);
+    box-shadow: 0 0 15px rgba(22, 163, 74, 0.4);
+  }
+  50% { 
+    border-color: var(--navy-600);
+    box-shadow: 0 0 20px rgba(0, 61, 122, 0.5);
+  }
+  75% { 
+    border-color: var(--green-400);
+    box-shadow: 0 0 15px rgba(22, 163, 74, 0.4);
+  }
+  100% { 
+    border-color: var(--navy-600);
+    box-shadow: 0 0 10px rgba(0, 61, 122, 0.3);
+  }
+}
+
+.chat-glow-container {
+  border: 2px solid var(--navy-600);
+  border-radius: 9999px;
+  padding: 2px;
+  background: white;
+  animation: glowingBorder 3s ease-in-out infinite;
+  position: relative;
+}
+
+.dark .chat-glow-container {
+  background: rgb(30 41 59); /* slate-800 */
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; transform: translateY(10px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes slideInFromRight {
+  0% { opacity: 0; transform: translateX(20px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes slideInFromLeft {
+  0% { opacity: 0; transform: translateX(-20px); }
+  100% { opacity: 1; transform: translateX(0); }
+}
+
+.animate-fadeIn {
+  animation: fadeIn 0.3s ease-out;
+}
+
+.animate-slideInFromRight {
+  animation: slideInFromRight 0.3s ease-out;
+}
+
+.animate-slideInFromLeft {
+  animation: slideInFromLeft 0.3s ease-out;
+}
+
+@keyframes gradientShift {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+.chat-glow-container form > div:first-child {
+  flex: 1 !important;
+  min-width: 0 !important;
+}
+
+/* Stack buttons vertically on mobile with proper alignment */
+@media (max-width: 767px) {
+  .chat-glow-container form > div:last-child {
+    align-self: flex-end !important;
+    min-height: 60px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: flex-end !important;
+  }
+}
+
+/* Prevent horizontal scrolling on any element */
+.no-horizontal-scroll {
+  overflow-x: hidden !important;
+  max-width: 100vw !important;
+}
+
+/* Main content container */
+#root, .app-container {
+  overflow-x: hidden !important;
+  width: 100vw !important;
+  max-width: 100vw !important;
 }
 
 /* Global box-sizing fix */
 *, *::before, *::after {
   box-sizing: border-box;
+}
+
+@layer base {
+  :root {
+    --background: 210 20% 98%; /* Very light blue-gray background */
+    --foreground: 210 30% 20%; /* Dark blue-gray text */
+    --muted: 210 15% 94%; /* Light muted blue-gray */
+    --muted-foreground: 210 15% 50%; /* Medium blue-gray for muted text */
+    --popover: 0 0% 100%; /* Pure white */
+    --popover-foreground: 210 30% 20%; /* Dark blue-gray */
+    --card: 0 0% 100%; /* Pure white cards */
+    --card-foreground: 210 30% 20%; /* Dark blue-gray */
+    --border: 210 15% 90%; /* Light blue-gray border */
+    --input: 210 15% 96%; /* Very light blue-gray for inputs */
+    --primary: 220 100% 50%; /* Vibrant blue primary */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
+    --secondary: 210 15% 96%; /* Light blue-gray secondary */
+    --secondary-foreground: 210 30% 20%; /* Dark blue-gray on secondary */
+    --accent: 210 15% 96%; /* Light blue-gray accent */
+    --accent-foreground: 210 30% 20%; /* Dark blue-gray on accent */
+    --destructive: 0 84% 60%; /* Red for destructive actions */
+    --destructive-foreground: 0 0% 100%; /* White text on destructive */
+    --ring: 220 100% 50%; /* Blue ring color */
+    --radius: 0.5rem;
+    
+    /* ISO HUB Colors (from tracerpos.com) */
+    --navy-600: 220 100% 25%; /* #003D7A - Deep Navy */
+    --navy-700: 220 100% 20%; /* #002F5F - Darker Navy */
+    --navy-800: 220 100% 15%; /* #002147 - Very Dark Navy */
+    --navy-900: 220 100% 10%; /* #001A38 - Darkest Navy */
+    --green-400: 142 76% 36%; /* #16A34A - Vibrant Green */
+    --green-500: 142 71% 45%; /* #22C55E - Bright Green */
+    --green-600: 142 76% 36%; /* #16A34A - Primary Green */
+    
+    /* Sidebar colors */
+    --sidebar-background: 0 0% 100%; /* Pure white sidebar */
+    --sidebar-foreground: 210 30% 20%; /* Dark blue-gray text */
+    --sidebar-primary: 220 100% 50%; /* Vibrant blue */
+    --sidebar-primary-foreground: 0 0% 100%; /* White text */
+    --sidebar-accent: 210 15% 96%; /* Light blue-gray accent */
+    --sidebar-accent-foreground: 210 30% 20%; /* Dark blue-gray */
+    --sidebar-border: 210 15% 90%; /* Light blue-gray border */
+    --sidebar-ring: 220 100% 50%; /* Blue ring */
+  }
+  
+  .dark {
+    --background: 210 30% 8%; /* Dark blue-gray background */
+    --foreground: 210 15% 95%; /* Light blue-gray text */
+    --muted: 210 25% 15%; /* Dark muted blue-gray */
+    --muted-foreground: 210 15% 70%; /* Medium blue-gray for muted text */
+    --popover: 210 30% 12%; /* Dark blue-gray popover */
+    --popover-foreground: 210 15% 95%; /* Light blue-gray */
+    --card: 210 30% 12%; /* Dark blue-gray card */
+    --card-foreground: 210 15% 95%; /* Light blue-gray */
+    --border: 210 25% 20%; /* Dark blue-gray border */
+    --input: 210 25% 15%; /* Dark blue-gray for inputs */
+    --primary: 220 100% 60%; /* Brighter blue primary for dark mode */
+    --primary-foreground: 0 0% 100%; /* White text on primary */
+    --secondary: 210 25% 15%; /* Dark blue-gray secondary */
+    --secondary-foreground: 210 15% 95%; /* Light blue-gray */
+    --accent: 210 25% 15%; /* Dark blue-gray accent */
+    --accent-foreground: 210 15% 95%; /* Light blue-gray */
+    --destructive: 0 84% 60%; /* Red for destructive actions */
+    --destructive-foreground: 0 0% 100%; /* White text on destructive */
+    --ring: 220 100% 60%; /* Blue ring color for dark mode */
+    
+    /* Sidebar colors for dark mode */
+    --sidebar-background: 210 30% 12%; /* Dark blue-gray sidebar */
+    --sidebar-foreground: 210 15% 95%; /* Light blue-gray text */
+    --sidebar-primary: 220 100% 60%; /* Brighter blue for dark mode */
+    --sidebar-primary-foreground: 0 0% 100%; /* White text */
+    --sidebar-accent: 210 25% 15%; /* Dark blue-gray accent */
+    --sidebar-accent-foreground: 210 15% 95%; /* Light blue-gray */
+    --sidebar-border: 210 25% 20%; /* Dark blue-gray border */
+    --sidebar-ring: 220 100% 60%; /* Blue ring */
+  }
+  
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
 }
 
 /* Accessibility Enhancement Styles */
@@ -654,6 +915,7 @@ select.glass-input option {
   
   #root {
     @apply overflow-x-hidden min-h-screen;
+    @apply font-sans antialiased bg-background text-foreground;
     font-family: 'Inter', system-ui, -apple-system, sans-serif;
     font-weight: 500;
     -webkit-font-smoothing: antialiased;
@@ -1212,3 +1474,22 @@ select.glass-input option {
     color: #e2e8f0;
   }
 }
+
+/* Force white text for user messages */
+.bg-blue-600 *,
+.bg-blue-600 p,
+.bg-blue-600 div,
+.bg-blue-600 span,
+.bg-blue-600 h1,
+.bg-blue-600 h2,
+.bg-blue-600 h3,
+.bg-blue-600 h4,
+.bg-blue-600 h5,
+.bg-blue-600 h6,
+.bg-blue-600 li,
+.bg-blue-600 strong,
+.bg-blue-600 em {
+  color: white !important;
+}
+
+

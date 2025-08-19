@@ -22,6 +22,7 @@ import {
   Eye,
   MoreVertical,
   RefreshCw as Sync,
+  Sync,
   AlertCircle,
   CheckCircle
 } from 'lucide-react';
@@ -66,6 +67,7 @@ export default function GoogleDriveManager() {
 
   // Fetch Google Drive files
   const { data: driveFilesResponse = {}, isLoading, refetch } = useQuery({
+  const { data: driveFiles = [], isLoading, refetch } = useQuery({
     queryKey: ['/api/google-drive/files'],
   });
 

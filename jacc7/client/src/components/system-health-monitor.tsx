@@ -100,16 +100,18 @@ const SystemHealthMonitor: React.FC = () => {
 
   // Build system status from API responses
   const buildSystemStatus = (): SystemStatus[] => {
+    console.log('Building system status with data:', { healthData, performanceData });
+    
     const systems: SystemStatus[] = [
-      // Core Infrastructure
+      // Core Infrastructure  
       {
         name: 'Database',
-        status: (performanceData?.database?.status === 'online' || performanceData?.database?.status === 'active') ? 'online' : 'offline',
-        responseTime: performanceData?.database?.responseTime || 0,
-        lastCheck: new Date().toISOString(),
+        status: healthData?.systems?.database?.status === 'online' ? 'online' : 'offline',
+        responseTime: healthData?.systems?.database?.responseTime || 0,
+        lastCheck: healthData?.timestamp || new Date().toISOString(),
         details: {
-          connections: performanceData?.database?.connections || 0,
-          queryTime: performanceData?.database?.responseTime || 0
+          connections: 1,
+          queryTime: healthData?.systems?.database?.responseTime || 0
         },
         icon: <Database className="h-5 w-5" />,
         category: 'core'
@@ -139,40 +141,38 @@ const SystemHealthMonitor: React.FC = () => {
       // AI Services
       {
         name: 'Pinecone Vector DB',
-        status: pineconeData?.isConnected ? 'online' : 'offline',
+        status: (healthData?.systems?.pinecone?.status === 'online' || pineconeData?.isConnected) ? 'online' : 'offline',
         responseTime: 180,
-        lastCheck: new Date().toISOString(),
+        lastCheck: healthData?.timestamp || new Date().toISOString(),
         details: {
           environment: pineconeData?.environment || 'us-east-1',
           indexName: pineconeData?.indexName || 'merchant-docs-v2',
           apiKeyPresent: pineconeData?.apiKeyPresent || false,
-          totalVectors: pineconeData?.stats?.totalVectors || 0
+          totalVectors: pineconeData?.stats?.namespaces?.['']?.recordCount || 0
         },
         icon: <Search className="h-5 w-5" />,
         category: 'ai'
       },
       {
         name: 'Claude AI',
-        status: (performanceData?.aiServices?.claudeStatus === 'operational' || performanceData?.aiServices?.status === 'active') ? 
-               (performanceData?.performance?.averageResponseTime > 2000 ? 'degraded' : 'online') : 'degraded',
-        responseTime: performanceData?.performance?.averageResponseTime || 1200,
-        lastCheck: new Date().toISOString(),
+        status: healthData?.systems?.aiServices?.claude === 'operational' ? 'online' : 'offline',
+        responseTime: 1200,
+        lastCheck: healthData?.timestamp || new Date().toISOString(),
         details: { 
           model: 'claude-sonnet-4-20250514',
-          status: performanceData?.aiServices?.claudeStatus || 'operational'
+          status: healthData?.systems?.aiServices?.claude || 'operational'
         },
         icon: <Brain className="h-5 w-5" />,
         category: 'ai'
       },
       {
-        name: 'OpenAI GPT',
-        status: (performanceData?.aiServices?.gptStatus === 'operational' || performanceData?.aiServices?.status === 'active') ? 
-               (performanceData?.performance?.averageResponseTime > 1800 ? 'degraded' : 'online') : 'degraded',
-        responseTime: Math.min(performanceData?.performance?.averageResponseTime || 1200, 1600),
-        lastCheck: new Date().toISOString(),
+        name: 'OpenAI GPT', 
+        status: healthData?.systems?.aiServices?.openai === 'operational' ? 'online' : 'offline',
+        responseTime: 1600,
+        lastCheck: healthData?.timestamp || new Date().toISOString(),
         details: { 
           model: 'gpt-4o',
-          status: performanceData?.aiServices?.gptStatus || 'operational'
+          status: healthData?.systems?.aiServices?.openai || 'operational'
         },
         icon: <Zap className="h-5 w-5" />,
         category: 'ai'

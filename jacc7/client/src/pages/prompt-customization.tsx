@@ -12,6 +12,7 @@ import { Plus, Edit3, Trash2, MessageSquare, Mail, TrendingUp, Users, Home, Chev
 import { useToast } from "@/hooks/use-toast";
 import { Link } from "wouter";
 // import PromptTutorial, { PromptTooltip } from "@/components/prompt-tutorial"; // REMOVED
+import PromptTutorial, { PromptTooltip } from "@/components/prompt-tutorial";
 
 interface UserPrompt {
   id: string;
@@ -420,6 +421,9 @@ export default function PromptCustomization() {
         const messageResponse = await apiRequest("POST", `/api/chat/send`, {
           chatId: chatId,
           message: currentMessage
+        const messageResponse = await apiRequest("POST", `/api/chats/${chatId}/messages`, {
+          content: currentMessage,
+          role: 'user'
         });
         
         const aiMessage = {
@@ -562,6 +566,9 @@ export default function PromptCustomization() {
               
                 <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
               
+              <PromptTooltip content="Create personalized AI instructions that help you work faster and get better results. These prompts understand your business and writing style.">
+                <HelpCircle className="w-5 h-5 text-muted-foreground hover:text-foreground cursor-help" />
+              </PromptTooltip>
             </h1>
             <p className="text-muted-foreground">
               Create personalized prompts that match your writing style and prioritize internal knowledge
@@ -570,6 +577,8 @@ export default function PromptCustomization() {
           <div className="flex flex-wrap gap-2">
             
             
+            <PromptTutorial />
+            <PromptTooltip content="Set up your writing style and preferences quickly">
               <Button variant="outline" onClick={runWizard} className="gap-2 text-sm">
                 <Wand2 className="w-4 h-4" />
                 <span className="hidden sm:inline">Quick Setup</span>
@@ -578,12 +587,16 @@ export default function PromptCustomization() {
             
 
             
+            </PromptTooltip>
+
+            <PromptTooltip content="Create a custom prompt from scratch">
               <Button onClick={() => setIsEditing(true)} className="gap-2 text-sm">
                 <Plus className="w-4 h-4" />
                 <span className="hidden sm:inline">New Prompt</span>
                 <span className="sm:hidden">New</span>
               </Button>
             
+            </PromptTooltip>
           </div>
         </div>
       </div>
@@ -689,6 +702,9 @@ export default function PromptCustomization() {
                 
                   <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
                 
+                <PromptTooltip content="These prompts help you analyze data, research markets, and make strategic business decisions. Use these for your internal planning and analysis work.">
+                  <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
+                </PromptTooltip>
               </div>
               <div className="space-y-2">
                 {INTERNAL_STRATEGY_PROMPTS.map((template, index) => {
@@ -697,6 +713,7 @@ export default function PromptCustomization() {
                   
                   return (
                     
+                    <PromptTooltip key={index} content={`${template.systemRules} Click to add this template to your collection.`}>
                       <Card className="hover:shadow-md transition-shadow cursor-help">
                         <CardContent className="p-4">
                           <div className="flex items-center justify-between">
@@ -721,6 +738,7 @@ export default function PromptCustomization() {
                       </CardContent>
                     </Card>
                   
+                  </PromptTooltip>
                 );
               })}
             </div>
@@ -733,6 +751,9 @@ export default function PromptCustomization() {
               
                 <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
               
+              <PromptTooltip content="These prompts create professional materials for your clients, including content with AI-generated images. Perfect for presentations, social media, and marketing materials you deliver to customers.">
+                <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
+              </PromptTooltip>
             </div>
             <div className="space-y-2">
               {CLIENT_CONTENT_PROMPTS.map((template, index) => {
@@ -741,6 +762,7 @@ export default function PromptCustomization() {
                 
                 return (
                   
+                  <PromptTooltip key={index} content={`${template.systemRules} ${template.hasImageGeneration ? 'Includes AI image generation with DALL-E 3.' : ''} Click to add this template.`}>
                     <Card className="hover:shadow-md transition-shadow cursor-help border-green-200 dark:border-green-800">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
@@ -753,6 +775,9 @@ export default function PromptCustomization() {
                                   
                                     <Camera className="w-4 h-4 text-purple-500" />
                                   
+                                  <PromptTooltip content="This template can generate images using DALL-E 3">
+                                    <Camera className="w-4 h-4 text-purple-500" />
+                                  </PromptTooltip>
                                 )}
                               </h4>
                               <p className="text-sm text-muted-foreground">
@@ -772,6 +797,7 @@ export default function PromptCustomization() {
                       </CardContent>
                     </Card>
                   
+                  </PromptTooltip>
                 );
               })}
             </div>
@@ -784,6 +810,9 @@ export default function PromptCustomization() {
               
                 <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
               
+              <PromptTooltip content="These prompts help you find prospects, create outreach sequences, and convert leads using proven sales methodologies. Use these for your marketing and sales activities.">
+                <HelpCircle className="w-4 h-4 text-muted-foreground hover:text-foreground cursor-help" />
+              </PromptTooltip>
             </div>
             <div className="space-y-2">
               {DEFAULT_PROMPTS.map((template, index) => {
@@ -792,6 +821,7 @@ export default function PromptCustomization() {
                 
                 return (
                   
+                  <PromptTooltip key={index} content={`${template.systemRules} Click to add this template to your collection.`}>
                     <Card className="hover:shadow-md transition-shadow cursor-help border-purple-200 dark:border-purple-800">
                       <CardContent className="p-4">
                         <div className="flex items-center justify-between">
@@ -816,6 +846,7 @@ export default function PromptCustomization() {
                       </CardContent>
                     </Card>
                   
+                  </PromptTooltip>
                 );
               })}
             </div>

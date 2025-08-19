@@ -94,6 +94,22 @@ export default function UserGuide() {
   };
 
   const roles = getUserVisibleRoles();
+    'manager': {
+      name: 'Manager',
+      icon: Users,
+      color: 'bg-orange-100 text-orange-700 dark:bg-orange-900 dark:text-orange-300',
+      description: 'Team managers overseeing sales agents and monitoring performance'
+    },
+    'admin': {
+      name: 'Admin',
+      icon: Shield,
+      color: 'bg-purple-100 text-purple-700 dark:bg-purple-900 dark:text-purple-300',
+      description: 'System administrators with full access and configuration control'
+    }
+  };
+
+  // Show all roles to all users
+  const roles = allRoles;
 
   return (
     <div className="space-y-6 max-w-6xl mx-auto p-6">
@@ -243,6 +259,8 @@ export default function UserGuide() {
           {activeRole === 'sales-agent' && <SalesAgentOnboarding />}
           {activeRole === 'client-admin' && <ClientAdminOnboarding />}
           {activeRole === 'dev-admin' && <DevAdminOnboarding />}
+          {activeRole === 'manager' && <ManagerOnboarding />}
+          {activeRole === 'admin' && <AdminOnboarding />}
         </TabsContent>
 
 
@@ -254,6 +272,7 @@ export default function UserGuide() {
               <CardTitle>Tips & Tricks for {roles[activeRole].name}</CardTitle>
               <CardDescription>
                 Pro tips, marketing strategies, sales techniques, and personal development to maximize your success with JACC
+                Pro tips to maximize your productivity with JACC
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -317,12 +336,36 @@ export default function UserGuide() {
                       <li>• Ask JACC: "Write compelling case studies from successful installs"</li>
                       <li>• Ask JACC: "Create talking points for a 2-minute sales pitch"</li>
                       <li>• Ask JACC: "Help me write testimonial request emails"</li>
+                    <h4 className="font-semibold text-green-700 dark:text-green-300 mb-2">Rate Calculator Pro Tips</h4>
+                    <ul className="space-y-1 text-sm">
+                      <li>• Use voice input for faster data entry during calls</li>
+                      <li>• Save common business profiles for quick calculations</li>
+                      <li>• Generate proposals directly from rate comparisons</li>
+                    </ul>
+                  </div>
+                  <div className="p-4 bg-blue-50 dark:bg-blue-950 rounded-lg">
+                    <h4 className="font-semibold text-blue-700 dark:text-blue-300 mb-2">Chat Assistant Tips</h4>
+                    <ul className="space-y-1 text-sm">
+                      <li>• Ask specific questions about rates, equipment, or compliance</li>
+                      <li>• Use voice commands for hands-free operation</li>
+                      <li>• Reference documents by name for instant information</li>
+                    </ul>
+                  </div>
+                  <div className="p-4 bg-orange-50 dark:bg-orange-950 rounded-lg">
+                    <h4 className="font-semibold text-orange-700 dark:text-orange-300 mb-2">My Documents Management</h4>
+                    <ul className="space-y-1 text-sm">
+                      <li>• Use "My Documents" tab for personal document organization</li>
+                      <li>• Create custom folders for client-specific materials</li>
+                      <li>• Upload personal rate sheets, proposals, and notes</li>
+                      <li>• Keep client presentations separate from company documents</li>
+                      <li>• Use search to quickly find your uploaded documents</li>
                     </ul>
                   </div>
                 </div>
               )}
 
               {activeRole === 'client-admin' && (
+              {activeRole === 'manager' && (
                 <div className="space-y-4">
                   <div className="p-4 bg-purple-50 dark:bg-purple-950 rounded-lg">
                     <h4 className="font-semibold text-purple-700 dark:text-purple-300 mb-2">Team Management</h4>
@@ -346,6 +389,7 @@ export default function UserGuide() {
               )}
 
               {activeRole === 'dev-admin' && (
+              {activeRole === 'admin' && (
                 <div className="space-y-4">
                   <div className="p-4 bg-red-50 dark:bg-red-950 rounded-lg">
                     <h4 className="font-semibold text-red-700 dark:text-red-300 mb-2">System Optimization</h4>
@@ -547,6 +591,8 @@ function SalesAgentOnboarding() {
 
 // Client Admin Onboarding Component
 function ClientAdminOnboarding() {
+// Manager Onboarding Component
+function ManagerOnboarding() {
   return (
     <div className="space-y-6">
       <Card>
@@ -557,6 +603,11 @@ function ClientAdminOnboarding() {
         </CardTitle>
         <CardDescription>
           Complete setup and management guide for client administrators
+            <Users className="w-5 h-5 text-orange-600" />
+            Manager Onboarding
+        </CardTitle>
+        <CardDescription>
+          Complete setup and management guide for team managers
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -688,6 +739,8 @@ function ClientAdminOnboarding() {
 
 // Dev Admin Onboarding Component
 function DevAdminOnboarding() {
+// Admin Onboarding Component
+function AdminOnboarding() {
   return (
     <div className="space-y-6">
       <Card>
@@ -698,6 +751,10 @@ function DevAdminOnboarding() {
           </CardTitle>
           <CardDescription>
             Complete technical setup and system management guide for development administrators
+            Admin Onboarding
+          </CardTitle>
+          <CardDescription>
+            Complete technical setup and system management guide for administrators
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">

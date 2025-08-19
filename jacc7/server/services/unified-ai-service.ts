@@ -87,19 +87,50 @@ export class UnifiedAIService {
   private responseCache = new Map<string, { response: UnifiedAIResponse, timestamp: number }>();
   private readonly CACHE_TTL = 5 * 60 * 1000; // 5 minutes
   
-  // Ultra-fast responses for common queries to eliminate yellow warning times
+  // Ultra-fast responses for common queries - more conversational approach
   private fastResponses = new Map<string, { message: string }>([
     ['calculate processing rates', {
-      message: '<h2>Processing Rate Calculator</h2><p>I can help you calculate processing rates! To provide accurate calculations, please tell me:</p><ul><li>Business type (retail, restaurant, e-commerce, etc.)</li><li>Monthly processing volume</li><li>Average ticket size</li><li>Current processor (if any)</li></ul><p>This information helps me provide precise rate comparisons and savings projections.</p>'
+      message: '<p>Love helping with rate calculations! Let me ask you a few quick questions so I can give you the most accurate numbers.</p><p>What type of business is this for? And do you know roughly how much they process per month? Those two things make a huge difference in what rates make sense for them.</p>'
     }],
     ['compare processors', {
-      message: '<h2>Processor Comparison Analysis</h2><p>I can compare payment processors based on your specific needs. Popular options include:</p><p><strong>Square:</strong> Great for small businesses, transparent pricing</p><p><strong>Clover:</strong> Comprehensive POS integration, flexible plans</p><p><strong>Stripe:</strong> Developer-friendly, excellent for online businesses</p><p><strong>TracerPay:</strong> Competitive rates with personalized service</p><p>What type of business are you comparing processors for?</p>'
+      message: '<p>Great question! The "best" processor really depends on the specific business needs.</p><p>What type of business are we talking about here? Restaurant, retail shop, online store? And are they looking for anything specific - like lower rates, better customer service, or maybe specific features?</p>'
     }],
     ['market intelligence', {
-      message: '<h2>Market Intelligence Research</h2><p>I can help you research competitive intelligence for your prospect. Market positioning varies significantly by industry and location, so understanding the specific business context is crucial for effective competitive analysis.</p><p>What type of business are you researching?</p>'
+      message: '<p>I can definitely help you research the competitive landscape for your prospect!</p><p>What type of business are you researching? And what city or area are they in? The local competition can vary quite a bit depending on the market.</p>'
     }],
     ['create proposal', {
-      message: '<h2>Proposal Creation Assistant</h2><p>Great! Let me help you build a compelling proposal. What details do you have about this prospect so far?</p><p><strong>Business basics:</strong> What type of business, location, and approximate monthly volume?</p><p><strong>Current situation:</strong> Who are they with now and what rates are they paying?</p><p><strong>Pain points:</strong> Any specific issues or goals they mentioned?</p><p>With these details, I can help you craft a proposal that addresses their specific needs and positions us competitively.</p>'
+      message: '<p>Perfect! I love helping put together winning proposals.</p><p>Tell me about this prospect - what type of business are they, and what do you know about their current processing situation? Even basic details help me guide you toward the right approach.</p>'
+    }],
+    ['website tech marketing', {
+      message: `<h2>🌐 Website & Tech Integration Services</h2>
+      <p><strong>For all website, tech, and marketing needs, please contact our in-house specialist:</strong></p>
+      <div style="background: #f8fafc; border: 2px solid #3b82f6; border-radius: 8px; padding: 16px; margin: 16px 0;">
+        <h3 style="color: #1e40af; margin: 0 0 8px 0;">Jeremy - Marketing & IT Team</h3>
+        <p style="margin: 4px 0;"><strong>📞 Phone:</strong> 765-338-8129</p>
+        <p style="margin: 4px 0;"><strong>✉️ Email:</strong> jeremy@keanonbiz.com</p>
+      </div>
+      <p><strong>Jeremy specializes in:</strong></p>
+      <ul>
+        <li>Website design and development</li>
+        <li>Payment gateway integrations</li>
+        <li>CRM system setup and automation</li>
+        <li>Marketing automation and AI tools</li>
+        <li>SEO optimization and digital marketing</li>
+        <li>E-commerce platform integrations</li>
+        <li>Custom technical solutions</li>
+      </ul>
+      <p>Jeremy will work directly with your client to implement the technical solutions they need!</p>`
+    }],
+    ['tech follow up', {
+      message: `<p>Perfect! Based on what you've described, that sounds like exactly the kind of project our tech team can help with.</p>
+      <p><strong>I'm connecting you with our specialist who can handle this implementation:</strong></p>
+      <div style="background: #f8fafc; border: 2px solid #3b82f6; border-radius: 8px; padding: 16px; margin: 16px 0;">
+        <h3 style="color: #1e40af; margin: 0 0 8px 0;">Jeremy - Marketing & IT Team</h3>
+        <p style="margin: 4px 0;"><strong>📞 Phone:</strong> 765-338-8129</p>
+        <p style="margin: 4px 0;"><strong>✉️ Email:</strong> jeremy@keanonbiz.com</p>
+      </div>
+      <p>Jeremy will be able to discuss the specific requirements, provide a timeline, and give you a quote for the implementation. He handles all our tech integration projects and will work directly with your client to get everything set up properly.</p>
+      <p>When you contact him, just mention the specific needs we discussed and he'll take it from there!</p>`
     }]
   ]);
   
@@ -108,6 +139,51 @@ export class UnifiedAIService {
     const keys = Array.from(this.fastResponses.keys());
     console.log(`🔍 Ultra-fast response check for: "${query}"`);
     console.log(`🔍 Available keys: [${keys.join(', ')}]`);
+    
+    // Special matching for specific tech implementation requests (not general tech questions)
+    const specificTechKeywords = [
+      'website integration', 'payment gateway setup', 'crm setup', 'marketing automation setup',
+      'seo implementation', 'website design', 'ecommerce integration', 'shopify setup',
+      'wordpress integration', 'api integration', 'landing page creation', 'email marketing setup'
+    ];
+    
+    // Only provide Jeremy's contact for specific implementation requests
+    if (specificTechKeywords.some(keyword => queryLower.includes(keyword))) {
+      console.log(`✅ SPECIFIC TECH IMPLEMENTATION REQUEST: Routing to Jeremy`);
+      return this.fastResponses.get('website tech marketing') || null;
+    }
+    
+    // For general tech questions, ask follow-up questions first
+    const generalTechKeywords = ['technology', 'tech', 'technical'];
+    if (generalTechKeywords.some(keyword => queryLower === keyword)) {
+      console.log(`✅ GENERAL TECH QUESTION: Asking follow-up questions`);
+      return {
+        message: `<p>Great! Technology integration can really help streamline their operations and boost sales.</p>
+        <p>Let me understand their specific needs better:</p>
+        <ul>
+          <li><strong>Website needs:</strong> Do they need a new website, payment processing added to existing site, or e-commerce functionality?</li>
+          <li><strong>CRM & automation:</strong> Are they looking to automate lead tracking, customer follow-ups, or sales processes?</li>
+          <li><strong>Marketing tools:</strong> Do they want email marketing, social media automation, or SEO optimization?</li>
+          <li><strong>Integration needs:</strong> Any specific platforms they use (QuickBooks, existing POS, etc.) that need to connect?</li>
+        </ul>
+        <p>What specific technology challenges are they facing, or what would help them grow their business most?</p>`
+      };
+    }
+    
+    // Check if user is providing specific tech details after initial tech question
+    const techDetailKeywords = [
+      'website', 'crm', 'automation', 'marketing', 'seo', 'ecommerce', 'e-commerce',
+      'integration', 'setup', 'platform', 'system', 'tools', 'software'
+    ];
+    
+    if (techDetailKeywords.some(keyword => queryLower.includes(keyword))) {
+      // Check if this looks like a response with specific details (longer response)
+      if (query.length > 20 && queryLower.split(' ').length > 3) {
+        console.log(`✅ TECH DETAILS PROVIDED: Routing to Jeremy follow-up`);
+        return this.fastResponses.get('tech follow up') || null;
+      }
+    }
+    
     for (const key of keys) {
       console.log(`🔍 Checking if "${queryLower}" includes "${key}"`);
       if (queryLower.includes(key)) {
@@ -724,68 +800,36 @@ export class UnifiedAIService {
    * Build system prompt
    */
   private buildSystemPrompt(userRole: string, documentContext: string, documentExamples: string): string {
-    return `You are JACC, a friendly AI assistant for merchant services sales agents. Think of yourself as a knowledgeable colleague who's been in the industry for years - professional but approachable.
+    return `You are JACC, a friendly marketing guru and merchant services expert. Think of yourself as a trusted colleague who loves helping sales agents succeed.
 
-**CRITICAL: USE PROPER HTML FORMATTING FOR ALL RESPONSES**
+**CONVERSATIONAL STYLE:**
+- Keep responses SHORT (2-3 sentences max initially)
+- Sound like a real person having a conversation
+- Ask engaging follow-up questions to learn more
+- Be curious about their specific situation
+- Use casual-professional tone (like talking to a colleague)
 
-**HTML FORMATTING REQUIREMENTS:**
-- Use <h2> or <h3> for section headers (never markdown ##)
-- Use <ul><li> tags for bullet points (never markdown bullets)
-- Use <strong> for emphasis (never markdown **)
-- Use <p> tags for paragraphs and <br> for line breaks
-- Structure responses with clear HTML hierarchy for maximum readability
+**RESPONSE PATTERN:**
+1. Give a brief, helpful insight (1-2 sentences)
+2. Ask 1-2 specific questions to understand their needs better
+3. Show genuine interest in their business challenge
 
-**PERSONALITY & TONE:**
-- Speak like a real person, not a robot
-- Use casual-professional language (like talking to a coworker)
-- Say "Hey" or "Alright" to start responses naturally
-- Use contractions (I'll, you'll, we've) to sound more human
-- Be confident but not overly formal
+**HTML FORMATTING:**
+- Use <p> for short paragraphs
+- Use <strong> for key points
+- Keep it clean and conversational, avoid heavy formatting
 
-**RESPONSE STYLE: Keep responses SHORT and CONCISE (2-3 paragraphs maximum)**
+**EXAMPLES OF GOOD RESPONSES:**
+"That's a great market to focus on! Restaurants typically process a lot of volume which means good revenue potential.
 
-**HTML BULLET POINT FORMATTING:**
-<ul>
-<li><strong>Always use HTML ul/li tags</strong> for bullet points</li>
-<li><strong>Make key points stand out</strong> with strong tags</li>
-<li><strong>Use proper HTML structure</strong> for lists, comparisons, and key takeaways</li>
-</ul>
+What type of restaurants are you targeting - quick service, fine dining, or maybe food trucks? And what's been your biggest challenge so far in reaching restaurant owners?"
 
-**DOCUMENT-FIRST APPROACH:**
-When relevant documents are found in our internal storage:
-1. **Give a brief, friendly answer** (1-2 sentences)
-2. **Show document previews with clickable links** using this exact format:
-${documentExamples ? `\n${documentExamples}\n` : ''}
-
-**DOCUMENT PREVIEW FORMAT:**
-📄 **[Document Name]** - [Brief excerpt...]
-🔗 [View Document](/documents/[document-id]) | [Download](/api/documents/[document-id]/download)
-
-**MARKET INTELLIGENCE SPECIALIZATION:**
-When users ask for market intelligence or competitive research, ALWAYS ask these specific qualifying questions:
-- **Geographic Area:** What city/state/region is the prospect located in?
-- **Industry Niche:** What specific type of business and industry specialty?
-- **Business Category:** Are they retail, wholesale, service-based, B2B, B2C, online, or brick-and-mortar?
-- **Competitive Landscape:** Who are their main local competitors?
-- **Growth Plans:** Are they expanding or focused on optimization?
-
-**RULES:**
-- ALWAYS prioritize internal documents over general knowledge
-- Keep explanations brief - let users click through to full documents
-- Include working document links when documents are found
-- Only give detailed explanations when NO internal documents exist
+Remember: Be genuinely curious and helpful, not robotic or overly formal.
 
 User context: ${userRole}
 
 DOCUMENT CONTEXT:
-${documentContext}
-
-ACTION ITEMS AND TASK EXTRACTION:
-- **AUTOMATICALLY IDENTIFY**: Extract action items, follow-up tasks, and deadlines from transcriptions and conversations
-- **CATEGORIZE TASKS**: Organize by type (Client Communication, Documentation, Internal Process, Scheduling)
-- **PRIORITY ASSESSMENT**: Assign priority levels (high, medium, low) based on urgency indicators
-- **FOLLOW-UP TRACKING**: Identify callback requirements, meeting schedules, and document preparation needs
-- **TASK FORMATTING**: Present action items with clear assignees, due dates, and next steps`;
+${documentContext}`;
   }
   
   /**

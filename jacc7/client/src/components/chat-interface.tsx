@@ -2,14 +2,22 @@ import { useState, useRef, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import { Send, Mic, MicOff } from "lucide-react";
+import { Send, Mic, MicOff, Calculator, TrendingUp, BarChart3, Brain } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+
 import { MessageContent } from "./message-content";
 // Types for messages
 interface MessageWithActions {
   id: string;
-  role: "user" | "assistant";
   content: string;
+  role: "user" | "assistant";
+  createdAt: string;
+  actions?: Array<{
+    type: "document_link" | "search_query" | "export";
+    label: string;
+    url?: string;
+    query?: string;
+  }>;
 }
 
 interface ChatInterfaceProps {
@@ -29,10 +37,14 @@ export default function ChatInterface({
   const [isRecording, setIsRecording] = useState(false);
   const [recognition, setRecognition] = useState<any>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const [isThinking, setIsThinking] = useState(false);
+  const [optimisticMessages, setOptimisticMessages] = useState<any[]>([]);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { toast } = useToast();
   const queryClient = useQueryClient();
+  
+
 
 
 
@@ -75,470 +87,324 @@ export default function ChatInterface({
     },
   });
 
-  // Auto-scroll to bottom when messages change
+// Define conversation starters
+const conversationStarters = [
+  {
+    id: "rates",
+    icon: Calculator,
+    text: "I need help calculating processing rates and finding competitive pricing",
+    color: "bg-blue-600 hover:bg-blue-700"
+  },
+  {
+    id: "compare", 
+    icon: BarChart3,
+    text: "I need to compare payment processors - can you help me analyze different options?",
+    color: "bg-green-600 hover:bg-green-700"
+  },
+  {
+    id: "proposal",
+    icon: TrendingUp,
+    text: "Help me create a professional proposal for a new merchant",
+    color: "bg-orange-600 hover:bg-orange-700"
+  },
+  {
+    id: "marketing",
+    icon: Brain,
+    text: "Let's Talk Marketing",
+    color: "bg-purple-600 hover:bg-purple-700"
+  }
+];
+
+  // Auto-scroll to bottom when messages or thinking state change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
     }
-  }, [messages]);
+  }, [messages, optimisticMessages, isThinking]);
 
-  // Initialize speech recognition
-  useEffect(() => {
-    if (typeof window !== 'undefined') {
-      const SpeechRecognition = (window as any).webkitSpeechRecognition || (window as any).SpeechRecognition;
-      
-      if (SpeechRecognition) {
-        const recognition = new SpeechRecognition();
-        recognition.continuous = false;
-        recognition.interimResults = false;
-        recognition.lang = 'en-US';
-        recognition.maxAlternatives = 1;
-        
-        recognition.onstart = () => {
-          console.log('Voice recognition started');
-          setIsRecording(true);
-        };
-        
-        recognition.onresult = (event: any) => {
-          const transcript = event.results[0][0].transcript;
-          console.log('Voice transcript:', transcript);
-          setInput(prev => prev + (prev ? ' ' : '') + transcript);
-          setIsRecording(false);
-          
-          // Auto-submit if transcript ends with question mark or period
-          if (transcript.trim().endsWith('?') || transcript.trim().endsWith('.')) {
-            setTimeout(() => {
-              if (transcript.trim()) {
-                const form = document.querySelector('form') as HTMLFormElement;
-                if (form) {
-                  const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
-                  form.dispatchEvent(submitEvent);
-                }
-              }
-            }, 500);
-          }
-          
-          toast({
-            title: "Voice input captured",
-            description: `Transcribed: "${transcript}"`,
-          });
-        };
-        
-        recognition.onerror = (event: any) => {
-          console.error('Speech recognition error:', event.error);
-          setIsRecording(false);
-          
-          let errorMessage = "Please try again or type your message.";
-          if (event.error === 'not-allowed') {
-            errorMessage = "Please allow microphone access in your browser settings.";
-          } else if (event.error === 'no-speech') {
-            errorMessage = "No speech detected. Please speak clearly.";
-          }
-          
-          toast({
-            title: "Voice recognition error",
-            description: errorMessage,
-            variant: "destructive",
-          });
-        };
-        
-        recognition.onend = () => {
-          console.log('Voice recognition ended');
-          setIsRecording(false);
-        };
-        
-        setRecognition(recognition);
-      } else {
-        console.log('Speech recognition not supported in this browser');
-      }
-    }
-  }, [toast]);
-
-  // Ensure messages is always an array to prevent crashes
-  const safeMessages = Array.isArray(messages) ? messages : [];
-  
-  // Optimized message validation - reduced logging for performance
-  useEffect(() => {
-    // Only log in development for debugging
-    if (process.env.NODE_ENV === 'development' && chatId) {
-      console.log(`💬 Chat ${chatId.substring(0, 8)}: ${safeMessages.length} messages, loading: ${isLoading}`);
-    }
-  }, [chatId, safeMessages.length, isLoading]);
-
-  // High-performance send message mutation
-  const sendMessageMutation = useMutation({
-    mutationFn: async (content: string) => {
-      if (!chatId) throw new Error("No active chat");
-      
-      setIsProcessing(true); // Start processing indicator
-      
-      const response = await fetch(`/api/chat/send`, {
-        method: "POST",
-        headers: { 
-          "Content-Type": "application/json",
-          "Cache-Control": "no-cache"
-        },
-        credentials: "include",
-        body: JSON.stringify({
-          message: content,
-          chatId: chatId,
-          timestamp: Date.now(),
-          requestId: `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
-        }),
-      });
-
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error("Send message failed:", errorText);
-        throw new Error(`Failed to send message: ${response.status}`);
-      }
-
-      const data = await response.json();
-      return data;
-    },
-    onSuccess: async (data, variables) => {
-      // Optimistic update for instant UI response
-      const userMessage = { 
-        id: `temp-user-${Date.now()}`, 
-        role: "user" as const, 
-        content: variables,
-        createdAt: new Date().toISOString()
-      };
-      const assistantMessage = {
-        id: `temp-assistant-${Date.now()}`,
-        role: "assistant" as const,
-        content: data.response || data.message || "Response received",
-        createdAt: new Date().toISOString()
-      };
-      
-      // Update cache immediately with new messages
-      queryClient.setQueryData([`/api/chats/${chatId}/messages`], (oldData: any) => {
-        const currentMessages = Array.isArray(oldData) ? oldData : [];
-        return [...currentMessages, userMessage, assistantMessage];
-      });
-      
-      // Background refresh to sync with server - delayed to prevent race conditions
-      setTimeout(() => {
-        queryClient.invalidateQueries({ queryKey: [`/api/chats/${chatId}/messages`] });
-        queryClient.refetchQueries({ queryKey: [`/api/chats/${chatId}/messages`] });
-      }, 500);
-      
-      setIsProcessing(false); // Clear processing indicator
-      onChatUpdate();
-    },
-    onError: (error) => {
-      console.error("Failed to send message:", error);
-      setIsProcessing(false); // Clear processing indicator on error
-      toast({
-        title: "Error",
-        description: "Failed to send message. Please try again.",
-        variant: "destructive",
-      });
-    },
-  });
-
-
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!input.trim() || sendMessageMutation.isPending || isProcessing) return;
-
-    const messageText = input.trim();
-    setInput("");
-    setIsProcessing(true); // Set processing state immediately
+  // Handle sending messages with optimistic updates
+  const sendMessage = async (messageText: string) => {
+    if (!messageText.trim()) return;
+    
+    setIsProcessing(true);
+    
+    // Add optimistic user message immediately
+    const optimisticUserMessage = {
+      id: `temp-${Date.now()}`,
+      role: 'user',
+      content: messageText,
+      createdAt: new Date().toISOString(),
+      isOptimistic: true
+    };
+    
+    setOptimisticMessages(prev => [...prev, optimisticUserMessage]);
     
     try {
-      // If no active chat, create a new chat first
       if (!chatId && onNewChatWithMessage) {
         await onNewChatWithMessage(messageText);
       } else if (chatId) {
-        await sendMessageMutation.mutateAsync(messageText);
-      } else {
-        throw new Error("No active chat and cannot create new chat");
+        // Show AI thinking state
+        setIsThinking(true);
+        
+        const response = await fetch(`/api/chats/${chatId}/messages`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({
+            content: messageText,
+            role: 'user'
+          })
+        });
+        
+        if (!response.ok) {
+          throw new Error(`Failed to send message: ${response.status}`);
+        }
+        
+        // Clear optimistic messages since real ones will come from server
+        setOptimisticMessages([]);
+        
+        // Immediately invalidate cache and refetch
+        queryClient.invalidateQueries({ queryKey: [`/api/chats/${chatId}/messages`] });
+        queryClient.invalidateQueries({ queryKey: ["/api/chats"] });
+        
+        // Intelligent polling that checks for AI response
+        let pollAttempts = 0;
+        const maxPolls = 20; // 10 seconds max
+        const initialMessageCount = messages.length;
+        
+        const smartPoll = setInterval(async () => {
+          if (pollAttempts >= maxPolls) {
+            clearInterval(smartPoll);
+            setIsThinking(false);
+            return;
+          }
+          
+          const freshData = await refetch();
+          const newMessages = freshData.data || [];
+          
+          // Check if we got both user message AND AI response (2 new messages)
+          if (newMessages.length >= initialMessageCount + 2) {
+            clearInterval(smartPoll);
+            setIsThinking(false);
+            onChatUpdate();
+          }
+          
+          pollAttempts++;
+        }, 500);
+        
+        // Fallback timeout
+        setTimeout(() => {
+          clearInterval(smartPoll);
+          setIsThinking(false);
+        }, 12000);
       }
     } catch (error) {
-      console.error("Error sending message:", error);
-      setIsProcessing(false); // Clear processing on error
-      // Restore the input text if message failed
-      setInput(messageText);
+      setOptimisticMessages([]);
+      setIsThinking(false);
       toast({
         title: "Error",
-        description: "Failed to send message. Please try again.",
+        description: "Failed to send message",
         variant: "destructive",
       });
+    } finally {
+      setIsProcessing(false);
     }
   };
 
-  const toggleVoiceRecording = () => {
-    if (!recognition) {
-      toast({
-        title: "Voice recognition not available",
-        description: "Your browser doesn't support voice recognition or microphone access is denied.",
-        variant: "destructive",
-      });
-      return;
-    }
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!input.trim() || isProcessing) return;
     
-    if (isRecording) {
-      recognition.stop();
-      setIsRecording(false);
-    } else {
-      try {
-        recognition.start();
-        setIsRecording(true);
-      } catch (error) {
-        console.error('Error starting voice recognition:', error);
-        toast({
-          title: "Voice recognition error",
-          description: "Failed to start voice recording. Please check microphone permissions.",
-          variant: "destructive",
-        });
-      }
-    }
+    const messageText = input.trim();
+    setInput("");
+    await sendMessage(messageText);
   };
 
-  // Auto-resize textarea
-  useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
-    }
-  }, [input]);
+  const handleConversationStarter = async (text: string) => {
+    await sendMessage(text);
+  };
 
-  // Render content based on chat state - moved after all hooks to avoid conditional hook calls
-  const renderContent = () => {
-    // Welcome screen with conversation starters when no chat is selected
-    if (!chatId) {
-      return (
-        <div className="flex-1 overflow-y-auto">
-          <div className="min-h-full flex items-center justify-center p-2 sm:p-4">
-            <div className="max-w-4xl w-full mx-auto text-center space-y-8 sm:space-y-12">
-              {/* Welcome Header */}
-            <div className="space-y-4 sm:space-y-6 px-2">
-              <div className="flex items-center justify-center">
-                <img 
-                  src="/jacc-logo.jpg" 
-                  alt="JACC" 
-                  className="w-20 h-20 sm:w-24 sm:h-24 rounded-full object-cover shadow-lg" 
-                />
-              </div>
-              <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">
-                Welcome to JACC
-              </h1>
-              <p className="text-base sm:text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed px-4">
-                Your AI-powered assistant for merchant services. Get instant help with processing rates, 
-                competitive analysis, and business insights.
-              </p>
-            </div>
+  // Debug log when no chatId to help troubleshoot
+  console.log('ChatInterface render:', { chatId, showingWelcome: !chatId });
 
-          {/* Conversation Starters */}
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 lg:gap-8 max-w-4xl mx-auto px-2 sm:px-4">
-            <button
-              onClick={() => onNewChatWithMessage?.("I need help calculating processing rates and finding competitive pricing")}
-              className="p-4 sm:p-6 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl hover:border-blue-300 dark:hover:border-blue-500 hover:shadow-xl transition-all text-left group w-full"
-            >
-              <div className="flex items-start space-x-3 sm:space-x-6">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-100 dark:bg-blue-900 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-blue-200 dark:group-hover:bg-blue-800 transition-colors">
-                  <span className="text-blue-600 dark:text-blue-400 text-base sm:text-lg font-semibold">%</span>
+  if (!chatId) {
+    return (
+      <div 
+        className="flex-1 flex flex-col h-full bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-900 dark:to-slate-800 overflow-hidden"
+      >
+        {/* Scroll Progress Indicator */}
+        <div 
+          className="fixed top-0 left-0 h-1 bg-gradient-to-r from-blue-600 to-green-400 z-50 transition-all duration-150 ease-out sm:hidden opacity-80"
+          style={{ width: '50%' }}
+        />
+        
+        {/* Scrollable content area with bottom padding for mobile nav */}
+        <div className="flex-1 overflow-y-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4 pb-4 sm:pb-4">
+          <div className="max-w-4xl w-full mx-auto">
+            <div className="space-y-4 sm:space-y-6 mt-32">
+              <div className="text-center space-y-2 sm:space-y-3">
+                <div className="flex justify-center">
+                  <img 
+                    src="/jacc-logo.jpg" 
+                    alt="JACC Logo" 
+                    className="w-12 sm:w-16 md:w-20 h-12 sm:h-16 md:h-20 rounded-full shadow-lg object-cover"
+                  />
                 </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1">Calculate Processing Rates</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Get competitive rate analysis and pricing comparisons</p>
+                <div className="space-y-1">
+                  <h1 
+                    className="text-lg sm:text-2xl md:text-3xl font-bold text-slate-900 dark:text-white"
+                  >
+                    Welcome to JACC
+                  </h1>
+                  <p 
+                    className="text-xs sm:text-base md:text-lg text-slate-600 dark:text-slate-300 px-2 sm:px-0"
+                  >
+                    Your AI-Powered Merchant Services Assistant
+                  </p>
                 </div>
               </div>
-            </button>
 
-            <button
-              onClick={() => onNewChatWithMessage?.("I need to compare payment processors - can you help me analyze different options?")}
-              className="p-4 sm:p-6 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl hover:border-green-300 dark:hover:border-green-500 hover:shadow-xl transition-all text-left group w-full"
-            >
-              <div className="flex items-start space-x-3 sm:space-x-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-100 dark:bg-green-900 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-green-200 dark:group-hover:bg-green-800 transition-colors">
-                  <span className="text-green-600 dark:text-green-400 text-base sm:text-lg font-semibold">⚖️</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1">Compare Processors</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Analyze different payment processing options and features</p>
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => onNewChatWithMessage?.("I need market intelligence for a prospect - help me research their geographic area, industry niche, and competitive landscape")}
-              className="p-4 sm:p-6 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl hover:border-purple-300 dark:hover:border-purple-500 hover:shadow-xl transition-all text-left group w-full"
-            >
-              <div className="flex items-start space-x-3 sm:space-x-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-purple-100 dark:bg-purple-900 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-purple-200 dark:group-hover:bg-purple-800 transition-colors">
-                  <span className="text-purple-600 dark:text-purple-400 text-base sm:text-lg font-semibold">📊</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1">Market Intelligence</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Research geographic area, industry niche, and competitive insights</p>
-                </div>
-              </div>
-            </button>
-
-            <button
-              onClick={() => onNewChatWithMessage?.("I need to create a proposal for a potential client")}
-              className="p-4 sm:p-6 bg-white dark:bg-gray-800 border-2 border-gray-200 dark:border-gray-700 rounded-xl sm:rounded-2xl hover:border-orange-300 dark:hover:border-orange-500 hover:shadow-xl transition-all text-left group w-full"
-            >
-              <div className="flex items-start space-x-3 sm:space-x-4">
-                <div className="w-10 h-10 sm:w-12 sm:h-12 bg-orange-100 dark:bg-orange-900 rounded-full flex items-center justify-center flex-shrink-0 group-hover:bg-orange-200 dark:group-hover:bg-orange-800 transition-colors">
-                  <span className="text-orange-600 dark:text-orange-400 text-base sm:text-lg font-semibold">📄</span>
-                </div>
-                <div className="flex-1 min-w-0">
-                  <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-1">Create Proposal</h3>
-                  <p className="text-xs sm:text-sm text-muted-foreground">Generate customized proposals and client presentations</p>
-                </div>
-              </div>
-            </button>
-          </div>
-
-            {/* Quick Start Tips */}
-            <div className="text-lg text-muted-foreground space-y-3">
-              <p>💡 <strong>Tip:</strong> You can also type any question directly to get started</p>
-              <p>🔍 JACC searches FAQ knowledge base first, then documents, then the web for the most accurate answers</p>
-            </div>
-
-            {/* Chat Input */}
-            <div className="max-w-4xl mx-auto w-full">
-              <div className="chat-glow-container">
-                <form onSubmit={handleSubmit} className="flex items-end gap-2 md:gap-2">
-                  <div className="flex-1" style={{ width: '90%' }}>
-                    <Textarea
-                      ref={textareaRef}
-                      value={input}
-                      onChange={(e) => setInput(e.target.value)}
-                      placeholder="Ask about processing rates, compare processors..."
-                      className="min-h-[60px] max-h-32 resize-none text-lg w-full"
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" && !e.shiftKey) {
-                          e.preventDefault();
-                          handleSubmit(e);
-                        }
+              {/* Mobile-first responsive grid */}
+              <div className="space-y-2 sm:space-y-3 md:grid md:grid-cols-2 md:gap-3 md:space-y-0 px-1 sm:px-0">
+                {conversationStarters.map((starter, index) => {
+                  const IconComponent = starter.icon;
+                  return (
+                    <button
+                      key={starter.id}
+                      onClick={() => handleConversationStarter(starter.text)}
+                      className="w-full p-3 sm:p-4 md:p-5 rounded-xl border-2 hover:shadow-lg transition-all duration-200 text-left group bg-white dark:bg-slate-800 hover:scale-[1.01] active:scale-[0.99] touch-manipulation min-h-[60px] sm:min-h-[70px]"
+                      style={{
+                        borderColor: starter.id === 'rates' ? '#2563eb' : 
+                                    starter.id === 'compare' ? '#16a34a' : 
+                                    starter.id === 'proposal' ? '#ea580c' : 
+                                    '#7c3aed',
+                        borderWidth: '2px'
                       }}
-                    />
-                  </div>
-                  <div className="flex flex-col gap-1 flex-shrink-0" style={{ width: '10%' }}>
-                    <Button
-                      type="button"
-                      size="icon"
-                      onClick={toggleVoiceRecording}
-                      disabled={!recognition}
-                      className={`h-8 w-full md:h-[30px] md:w-[60px] p-0 rounded-lg transition-all ${
-                        isRecording
-                          ? "bg-red-600 hover:bg-red-700"
-                          : "bg-gray-600 hover:bg-gray-700"
-                      }`}
+                      disabled={isProcessing}
                     >
-                      {isRecording ? (
-                        <MicOff className="h-3 w-3 md:h-4 md:w-4" />
-                      ) : (
-                        <Mic className="h-3 w-3 md:h-4 md:w-4" />
-                      )}
-                    </Button>
-                    <Button
-                      type="submit"
-                      size="icon"
-                      disabled={!input.trim() || sendMessageMutation.isPending}
-                      className="bg-blue-700 hover:bg-blue-800 h-8 w-full md:h-[30px] md:w-[60px] p-0 rounded-lg"
-                    >
-                      {sendMessageMutation.isPending ? (
-                        <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white"></div>
-                      ) : (
-                        <Send className="h-3 w-3 md:h-4 md:w-4" />
-                      )}
-                    </Button>
-                  </div>
-                </form>
+                      <div className="flex items-center space-x-3">
+                        <IconComponent 
+                          className="w-5 h-5 sm:w-6 sm:h-6 md:w-7 md:h-7 flex-shrink-0" 
+                          style={{
+                            color: starter.id === 'rates' ? '#2563eb' : 
+                                   starter.id === 'compare' ? '#16a34a' : 
+                                   starter.id === 'proposal' ? '#ea580c' : 
+                                   '#7c3aed'
+                          }}
+                        />
+                        <span className="text-xs sm:text-sm md:text-base font-medium leading-tight text-slate-900 dark:text-white text-left flex-1">
+                          {starter.text}
+                        </span>
+                      </div>
+                    </button>
+                  );
+                })}
               </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Fixed bottom input area - positioned above bottom nav */}
+        <div className="flex-shrink-0 border-t border-slate-200 dark:border-slate-700 bg-white/80 dark:bg-slate-900/80 backdrop-blur-sm mb-20 md:mb-0">
+          <div className="max-w-4xl w-full mx-auto px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+            <div className="chat-glow-container">
+              <form onSubmit={handleSubmit} className="flex gap-2 w-full">
+                <Textarea
+                  ref={textareaRef}
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  placeholder="Type your question here..."
+                  className="w-[85%] min-h-[44px] max-h-20 resize-none border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm sm:text-base min-w-0 rounded-lg px-3 py-2.5 focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' && !e.shiftKey) {
+                      e.preventDefault();
+                      handleSubmit(e);
+                    }
+                  }}
+                />
+                <Button
+                  type="submit"
+                  disabled={!input.trim() || isProcessing}
+                  size="icon"
+                  className="w-[15%] h-11 bg-blue-600 hover:bg-blue-700 text-white border-0 flex-shrink-0 rounded-lg"
+                >
+                  <Send className="w-4 h-4 text-white" />
+                </Button>
+              </form>
             </div>
           </div>
         </div>
       </div>
-      );
-    }
+    );
+  }
 
-    // Remove duplicate loading state - now handled inline
-
-    // Error state
-    if (error) {
-      return (
-        <div className="flex-1 flex items-center justify-center">
-          <div className="text-center">
-            <p className="text-red-500 mb-4">Error loading messages: {error.message}</p>
-            <Button onClick={() => refetch()} variant="outline">
-              Try Again
-            </Button>
+  return (
+    <div className="flex-1 flex flex-col h-full bg-white dark:bg-slate-900">
+      {/* Messages Area */}
+      <div className="flex-1 overflow-y-auto p-4 space-y-4 pb-4 md:pb-24">
+        {isLoading ? (
+          <div className="flex justify-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
           </div>
-        </div>
-      );
-    }
-
-    // Chat interface when a chat is selected
-    return (
-    <div className="flex-1 flex flex-col h-full w-full max-w-full overflow-hidden">
-      {/* Messages area */}
-      <div className="flex-1 overflow-y-auto p-4 space-y-4">
-        {(isLoading || sendMessageMutation.isPending || isProcessing) ? (
-          // Animated working indicator with gear
-          <div className="flex items-center justify-center h-full">
-            <div className="text-center">
-              <div className="inline-flex items-center space-x-3 mb-4">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600">
-                  <svg className="w-8 h-8 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                  </svg>
-                </div>
-                <span className="text-lg font-medium text-gray-700 dark:text-gray-300">Working on it...</span>
-              </div>
-              <p className="text-sm text-muted-foreground">
-                Searching knowledge base and generating response
-              </p>
-            </div>
-          </div>
-        ) : safeMessages.length === 0 ? (
-          <div className="flex items-center justify-center h-full">
-            <p className="text-muted-foreground">No messages yet. Start the conversation!</p>
+        ) : messages.length === 0 ? (
+          <div className="text-center text-slate-500 dark:text-slate-400 py-8">
+            No messages yet. Start a conversation!
           </div>
         ) : (
           <>
-            {safeMessages.map((message) => (
+            {/* Render actual messages */}
+            {messages.map((message) => (
               <div
                 key={message.id}
-                className={`flex ${
-                  message.role === "user" ? "justify-end" : "justify-start"
-                }`}
+                className={`flex ${message.role === 'user' ? 'justify-end' : 'justify-start'} animate-fadeIn`}
               >
                 <div
-                  className={`max-w-[85%] rounded-2xl px-4 py-3 shadow-sm ${
-                    message.role === "user"
-                      ? "bg-blue-600 text-white"
-                      : "bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  className={`max-w-[80%] rounded-lg p-4 ${
+                    message.role === 'user'
+                      ? 'bg-blue-600 text-white shadow-lg'
+                      : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white shadow-md'
                   }`}
                 >
-                  {message.role === "assistant" ? (
-                    <MessageContent content={message.content} />
-                  ) : (
-                    <p className="whitespace-pre-wrap text-sm leading-relaxed">{message.content}</p>
-                  )}
+                  <MessageContent 
+                    content={message.content} 
+                    className={message.role === 'user' ? 'text-white [&>*]:text-white [&>p]:text-white [&>div]:text-white' : ''}
+                  />
                 </div>
               </div>
             ))}
             
-            {/* Show working indicator while sending message */}
-            {(sendMessageMutation.isPending || isProcessing) && (
-              <div className="flex justify-start">
-                <div className="max-w-[85%] rounded-2xl px-4 py-3 shadow-sm bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-                  <div className="inline-flex items-center space-x-2">
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600">
-                      <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                      </svg>
+            {/* Render optimistic user messages */}
+            {optimisticMessages.map((message) => (
+              <div
+                key={message.id}
+                className="flex justify-end animate-slideInFromRight"
+              >
+                <div className="max-w-[80%] rounded-lg p-4 bg-blue-600 text-white shadow-lg opacity-90">
+                  <MessageContent 
+                    content={message.content} 
+                    className="text-white [&>*]:text-white [&>p]:text-white [&>div]:text-white"
+                  />
+                </div>
+              </div>
+            ))}
+            
+            {/* AI Thinking State */}
+            {isThinking && (
+              <div className="flex justify-start animate-fadeIn">
+                <div className="max-w-[80%] rounded-lg p-4 bg-slate-100 dark:bg-slate-700 shadow-md">
+                  <div className="flex items-center space-x-3">
+                    <div className="relative">
+                      <Brain className="w-6 h-6 text-blue-600 dark:text-blue-400 animate-pulse" />
+                      <div className="absolute inset-0 animate-spin">
+                        <div className="w-6 h-6 border-2 border-blue-600 dark:border-blue-400 border-t-transparent rounded-full opacity-30"></div>
+                      </div>
                     </div>
-                    <span className="text-sm font-medium">Working on it...</span>
+                    <div className="flex space-x-1">
+                      <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce"></div>
+                      <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.1s'}}></div>
+                      <div className="w-2 h-2 bg-blue-600 dark:bg-blue-400 rounded-full animate-bounce" style={{animationDelay: '0.2s'}}></div>
+                    </div>
+                    <span className="text-slate-600 dark:text-slate-300 text-sm">Thinking...</span>
                   </div>
                 </div>
               </div>
@@ -548,59 +414,34 @@ export default function ChatInterface({
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Chat input area */}
-      <div className="border-t bg-white dark:bg-gray-800 p-4 pb-4">
-        <form onSubmit={handleSubmit} className="flex items-end gap-2 md:gap-2">
-          <div className="flex-1" style={{ width: '90%' }}>
+      {/* Input Area - Fixed for mobile/tablet, static for desktop */}
+      <div className="border-t border-slate-200 dark:border-slate-700 p-4 bg-white dark:bg-slate-900 md:relative md:bottom-auto md:left-auto md:right-auto fixed bottom-24 left-0 right-0 z-10" style={{ paddingBottom: 'max(1rem, env(safe-area-inset-bottom))' }}>
+        <div className="chat-glow-container">
+          <form onSubmit={handleSubmit} className="flex gap-2">
             <Textarea
               ref={textareaRef}
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              placeholder="Ask about processing rates, compare processors..."
-              className="min-h-[60px] max-h-32 resize-none text-lg w-full"
+              placeholder="Type your message..."
+              className="w-[85%] min-h-[44px] max-h-32 resize-none border-2 border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm sm:text-base rounded-lg px-4 py-3"
               onKeyDown={(e) => {
-                if (e.key === "Enter" && !e.shiftKey) {
+                if (e.key === 'Enter' && !e.shiftKey) {
                   e.preventDefault();
                   handleSubmit(e);
                 }
               }}
             />
-          </div>
-          <div className="flex flex-col gap-1 flex-shrink-0" style={{ width: '10%' }}>
-            <Button
-              type="button"
-              variant="ghost"
-              size="sm"
-              onClick={toggleVoiceRecording}
-              className={`h-8 w-full md:h-10 md:w-full p-0 rounded-lg transition-all ${
-                isRecording 
-                  ? 'bg-red-500 hover:bg-red-600 text-white' 
-                  : 'bg-gray-100 hover:bg-gray-200 text-gray-600 dark:bg-gray-700 dark:hover:bg-gray-600 dark:text-gray-300'
-              }`}
-              disabled={!recognition}
-              title={isRecording ? "Stop recording" : "Start voice recording"}
-            >
-              {isRecording ? <MicOff className="w-3 h-3 md:w-4 md:h-4" /> : <Mic className="w-3 h-3 md:w-4 md:h-4" />}
-            </Button>
-            
             <Button
               type="submit"
-              disabled={sendMessageMutation.isPending || !input.trim()}
-              className="bg-blue-700 hover:bg-blue-800 h-8 w-full md:h-10 md:w-full p-0 rounded-lg"
+              disabled={!input.trim() || isProcessing}
+              size="icon"
+              className="w-[15%] h-11 bg-blue-600 hover:bg-blue-700 text-white border-0 flex-shrink-0"
             >
-              {sendMessageMutation.isPending ? (
-                <div className="animate-spin rounded-full h-3 w-3 md:h-4 md:w-4 border-b-2 border-white"></div>
-              ) : (
-                <Send className="h-3 w-3 md:h-4 md:w-4" />
-              )}
+              <Send className="w-4 h-4 text-white" />
             </Button>
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
     </div>
-    );
-  };
-
-  // Return the rendered content
-  return renderContent();
+  );
 }

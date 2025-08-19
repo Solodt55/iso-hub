@@ -13,33 +13,16 @@ export function useAuth() {
     gcTime: 0, // Disable cache for auth state
     queryFn: async () => {
       console.log('Checking user authentication...');
-      
-      // Check if we're in an iframe (accessed via ISO-Hub)
-      const isInIframe = window.self !== window.top;
-      
-      if (isInIframe) {
-        console.log('JACC accessed via iframe - checking auth immediately...');
-        // No delay - check auth immediately
-      }
-      
-      const res = await fetch("/api/user", {
-        credentials: "include",
+      const response = await fetch('/api/user', {
+        credentials: 'include'
       });
       
-      console.log('Auth check response status:', res.status);
-      
-      if (res.status === 401) {
-        console.log('User not authenticated');
-        return null; // Return null for unauthenticated users
+      if (!response.ok) {
+        throw new Error('Not authenticated');
       }
       
-      if (!res.ok) {
-        console.log('Auth check failed:', res.status, res.statusText);
-        throw new Error(`${res.status}: ${res.statusText}`);
-      }
-      
-      const userData = await res.json();
-      console.log('User authenticated:', userData);
+      const userData = await response.json();
+      console.log('User data retrieved:', userData);
       return userData;
     },
   });
@@ -47,27 +30,35 @@ export function useAuth() {
   // Login mutation for login form
   const loginMutation = useMutation({
     mutationFn: async ({ email, password }: { email: string; password: string }) => {
-      // Use the correct login endpoint
-      const loginUrl = '/api/auth/simple-login';
+      // Try multiple login endpoints for deployment compatibility
+      const endpoints = ['/api/login', '/api/test-login', '/api/auth/simple-login'];
       
-      console.log(`Attempting login at ${loginUrl} with username: ${email}`);
-      const response = await fetch(loginUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ username: email, password }),
-        credentials: 'include'
-      });
+      for (const endpoint of endpoints) {
+        try {
+          console.log(`Attempting login at ${endpoint} with username: ${email}`);
+          const response = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: email, password }),
+            credentials: 'include'
+          });
 
-      console.log(`Login response from ${loginUrl}:`, response.status);
-      if (response.ok) {
-        const result = await response.json();
-        console.log('Login successful:', result);
-        return result;
-      } else {
-        const error = await response.text();
-        console.log(`Login failed at ${loginUrl}:`, error);
-        throw new Error('Login failed - please try again');
+          console.log(`Login response from ${endpoint}:`, response.status);
+          if (response.ok) {
+            const result = await response.json();
+            console.log('Login successful:', result);
+            return result;
+          } else {
+            const error = await response.text();
+            console.log(`Login failed at ${endpoint}:`, error);
+          }
+        } catch (error) {
+          console.log(`Login attempt failed at ${endpoint}:`, error);
+          continue;
+        }
       }
+      
+      throw new Error('Login failed - please try again');
     },
     onSuccess: () => {
       console.log('Login successful, refreshing auth state...');
@@ -107,6 +98,7 @@ export function useAuth() {
   return {
     user,
     isLoading,
+    error,
     isAuthenticated: !!user && !error,
     loginMutation,
     logoutMutation,

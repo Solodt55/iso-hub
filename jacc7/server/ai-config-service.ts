@@ -5,6 +5,7 @@ import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
 // the newest Anthropic model is "claude-sonnet-4-20250514" which was released May 14, 2025
+// the newest Anthropic model is "claude-3-7-sonnet-20250219" which was released May 14, 2025
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
@@ -33,6 +34,23 @@ export class AIConfigurationService {
     if (existingModels.length === 0) {
       const defaultModels: InsertAIModel[] = [
         {
+          name: "GPT-4.1 Mini",
+          provider: "openai",
+          modelId: "gpt-4.1-mini",
+          isActive: true,
+          maxTokens: 4096,
+          costPerToken: 0.000005,
+          isDefault: false,
+          capabilities: {
+            vision: false,
+            functions: true,
+            reasoning: true,
+            analysis: true,
+            longContext: false
+          },
+          description: "OpenAI's latest efficient model optimized for logical reasoning and calculations"
+        },
+        {
           name: "Claude 4.0 Sonnet",
           provider: "anthropic",
           modelId: "claude-sonnet-4-20250514",
@@ -42,15 +60,16 @@ export class AIConfigurationService {
           isDefault: true,
           capabilities: {
             vision: true,
-            functions: false,
+            functions: true,
             reasoning: true,
             analysis: true,
             longContext: true
           },
           description: "Latest Claude 4.0 model with enhanced reasoning and analysis capabilities"
         },
+
         {
-          name: "GPT-4.1-Mini",
+          name: "GPT-4.1 Mini",
           provider: "openai",
           modelId: "gpt-4.1-mini",
           isActive: true,
@@ -58,7 +77,7 @@ export class AIConfigurationService {
           costPerToken: 0.000005,
           isDefault: false,
           capabilities: {
-            vision: true,
+            vision: false,
             functions: true,
             reasoning: true,
             analysis: true,
@@ -240,11 +259,11 @@ export class AIConfigurationService {
 
     if (existingRecord) {
       // Update existing record
-      const newTotalRequests = existingRecord.totalRequests + 1;
-      const newSuccessfulRequests = existingRecord.successfulRequests + (metrics.success ? 1 : 0);
-      const newAverageResponseTime = (existingRecord.averageResponseTime * existingRecord.totalRequests + metrics.responseTime) / newTotalRequests;
-      const newAverageTokensUsed = (existingRecord.averageTokensUsed * existingRecord.totalRequests + metrics.tokensUsed) / newTotalRequests;
-      const newTotalCost = existingRecord.totalCost + metrics.cost;
+      const newTotalRequests = (existingRecord.totalRequests || 0) + 1;
+      const newSuccessfulRequests = (existingRecord.successfulRequests || 0) + (metrics.success ? 1 : 0);
+      const newAverageResponseTime = ((existingRecord.averageResponseTime || 0) * (existingRecord.totalRequests || 0) + metrics.responseTime) / newTotalRequests;
+      const newAverageTokensUsed = ((existingRecord.averageTokensUsed || 0) * (existingRecord.totalRequests || 0) + metrics.tokensUsed) / newTotalRequests;
+      const newTotalCost = (existingRecord.totalCost || 0) + metrics.cost;
 
       await db.update(modelPerformance)
         .set({

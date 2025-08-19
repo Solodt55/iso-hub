@@ -1,21 +1,44 @@
-import 'dotenv/config';
+// Environment variables loading (required for external IDEs)
+import dotenv from 'dotenv';
+dotenv.config({ path: '.env.development' });
+
 import express, { type Request, Response, NextFunction } from "express";
+import path from "path";
 import { registerConsolidatedRoutes } from "./consolidated-routes";
-import { setupVite, serveStatic, log } from "./vite";
+import { setupVite, log } from "./vite";
 import { initializeDatabase } from "./db";
 import { performanceService } from "./services/performance-service";
+import {
+  ensureProductionFiles,
+  configureProductionServer,
+  validateDeploymentEnvironment
+} from "./deployment-config";
+import {
+  createTestDataPlaceholders,
+  setupProductionDirectories,
+  setupErrorHandling
+} from "./production-setup";
+import { configureMemoryOptimization, configureProcessLimits } from "./memory-optimization";
+import { setupSecurity } from "./security-middleware";
+import { memoryManager } from "./services/memory-manager";
 
 const app = express();
+const isDevelopment = process.env.NODE_ENV === "development";
 
-// CORS configuration for cross-origin requests
+// Trust proxy (for rate limiting behind proxies)
+app.set("trust proxy", 1);
+
+// Iframe embedding / CORS configuration
 app.use((req, res, next) => {
   // Allow requests from ISO-Hub and other origins
   const allowedOrigins = [
-    'http://localhost:5173',
-    'http://localhost:5174', 
-    'http://localhost:3000',
-    'http://localhost:5000',
-    'https://your-production-domain.com' // Add your production domain
+    // Development domains
+    "http://localhost:5173",
+    "http://localhost:3000",
+    "http://localhost:5000",
+    /https:\/\/.*\.replit\.app$/,
+    /https:\/\/.*\.replit\.dev$/,
+    /https:\/\/.*\.replit\.co$/
   ];
   
   const origin = req.headers.origin;
@@ -27,160 +50,227 @@ app.use((req, res, next) => {
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization, Accept, Cookie');
   res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Expose-Headers', 'Set-Cookie');
+
+    // ✅ Add CSP frame-ancestors header for iframe embedding
+  res.setHeader(
+    'Content-Security-Policy',
+    `frame-ancestors ${allowedOrigins.join(' ')}`
+  );
   
   // Handle preflight requests
   if (req.method === 'OPTIONS') {
     res.status(200).end();
     return;
   }
-  
+
   next();
 });
 
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+// Body parsers - reduce limits to save memory
+app.use(express.json({ limit: "2mb" }));
+app.use(express.urlencoded({ extended: false, limit: "2mb" }));
 
-// Enable performance tracking
+// Performance tracking
 app.use(performanceService.trackPerformance());
 
-// Serve static files from public directory with caching
-app.use(express.static('public', {
-  maxAge: '1d',
-  etag: true,
-  lastModified: true
-}));
+// Initialize memory management
+console.log("✅ Memory management initialized");
 
-app.use((req, res, next) => {
-  const start = Date.now();
-  const path = req.path;
-  let capturedJsonResponse: Record<string, any> | undefined = undefined;
+// Static assets - serve public folder
+app.use(
+  "/assets",
+  express.static("public", {
+    maxAge: "1d",
+    etag: true,
+    lastModified: true
+  })
+);
 
-  const originalResJson = res.json;
-  res.json = function (bodyJson, ...args) {
-    capturedJsonResponse = bodyJson;
-    return originalResJson.apply(res, [bodyJson, ...args]);
-  };
+// Also serve public files directly from root for compatibility
+app.use(
+  express.static("public", {
+    maxAge: "1d",
+    etag: true,
+    lastModified: true
+  })
+);
 
-  res.on("finish", () => {
-    const duration = Date.now() - start;
-    if (path.startsWith("/api")) {
-      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
-      if (capturedJsonResponse) {
-        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
-      }
+// Startup sequence
+(async () => {
+  console.log("🚀 Starting JACC application server...");
+  console.log(`📦 Environment: ${process.env.NODE_ENV || 'development'}`);
+  console.log(`🔧 Is Development: ${isDevelopment}`);
 
-      if (logLine.length > 80) {
-        logLine = logLine.slice(0, 79) + "…";
-      }
+  try {
+    // Memory and process tuning
+    configureMemoryOptimization();
+    configureProcessLimits();
+    console.log("✅ Memory and process limits configured");
 
-      log(logLine);
+    // Security middleware
+    setupSecurity(app);
+    console.log("✅ Security middleware configured");
+
+    // Production directories & placeholders
+    setupProductionDirectories();
+    console.log("✅ Production directories ready");
+    createTestDataPlaceholders();
+    console.log("✅ Test data placeholders created");
+
+    // Error handling setup
+    setupErrorHandling();
+    console.log("✅ Error handling configured");
+
+    // Only validate production files in production
+    if (!isDevelopment) {
+      await ensureProductionFiles();
+      console.log("✅ Production files validated");
     }
+
+    // Database init
+    await initializeDatabase();
+    console.log("✅ Database initialized");
+
+    // Route registration
+    registerConsolidatedRoutes(app);
+    console.log("✅ Routes registered");
+  } catch (error) {
+    console.error("❌ Initialization error:", error);
+    process.exit(1);
+  }
+
+  // Deployment checks
+  if (!isDevelopment && !validateDeploymentEnvironment()) {
+    console.warn("⚠️ Some deployment checks failed—continuing anyway");
+  }
+
+  // Global error handler
+  app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+
+    if (isDevelopment) {
+      console.error("Error:", err);
+    }
+
+    res.status(status).json({ message });
   });
 
-  next();
-});
+  // Create HTTP server
+  const http = await import("http");
+  const server = http.createServer(app);
 
-(async () => {
-  try {
-    // Initialize database connection and health check
-    log("Initializing database connection...");
-    
-    const dbHealthy = await initializeDatabase();
-    if (!dbHealthy) {
-      throw new Error("Database initialization failed");
-    }
-    
-    // Register consolidated routes
-    const server = await registerConsolidatedRoutes(app);
+  // Development vs Production setup
+  if (isDevelopment) {
+    // Use Vite only in development
+    console.log("🔧 Setting up Vite development server...");
+    await setupVite(app, server);
+    console.log("✅ Vite development server configured");
+  } else {
+    // In production, serve the built static files
+    console.log("📦 Serving production build...");
 
-    // Enhanced health check endpoint with performance metrics
-    app.get('/health', (req, res) => {
-      const health = performanceService.getHealthStatus();
-      res.json({ 
-        status: health.status, 
-        timestamp: new Date().toISOString(),
-        performance: {
-          avgResponseTime: health.avgResponseTime,
-          memoryUsage: health.memoryUsage,
-          slowEndpoints: health.slowEndpoints
+    // Serve the built client files
+    const staticPath = path.join(process.cwd(), 'dist', 'public');
+    console.log(`📁 Serving static files from: ${staticPath}`);
+
+    app.use(
+      express.static(staticPath, {
+        maxAge: '1d',
+        etag: true,
+        lastModified: true,
+        index: 'index.html'
+      })
+    );
+
+    // SPA fallback - serve index.html for all non-API routes
+    app.get('*', (req, res, next) => {
+      // Skip API routes
+      if (req.path.startsWith('/api')) {
+        return next();
+      }
+
+      const indexPath = path.join(staticPath, 'index.html');
+      res.sendFile(indexPath, (err) => {
+        if (err) {
+          console.error('Error serving index.html:', err);
+          res.status(404).send('Page not found');
         }
       });
     });
 
-    // Performance metrics endpoint
-    app.get('/api/admin/performance/metrics', (req, res) => {
-      res.json({
-        health: performanceService.getHealthStatus(),
-        memory: performanceService.getCurrentMemoryUsage(),
-        slowEndpoints: performanceService.getSlowEndpoints(),
-        avgResponseTime: performanceService.getAverageResponseTime()
+    console.log("✅ Production static file serving configured");
+  }
+
+  // Port configuration - simplified and consistent
+  const PORT = parseInt(process.env.PORT || '5000', 10);
+  const HOST = 'localhost';
+
+  // Start server with error handling
+  try {
+    await new Promise<void>((resolve, reject) => {
+      server.listen(PORT, HOST, () => {
+        console.log(`\n🚀 Server successfully started!`);
+        console.log(`📡 Listening on http://${HOST}:${PORT}`);
+        console.log(`🌍 Environment: ${process.env.NODE_ENV || 'development'}`);
+
+        if (!isDevelopment) {
+          console.log(`✅ Production server ready for traffic`);
+          console.log(`📊 Process ID: ${process.pid}`);
+        } else {
+          console.log(`🔧 Development server with hot reload enabled`);
+        }
+
+        resolve();
+      });
+
+      server.on('error', (err: any) => {
+        if (err.code === 'EADDRINUSE') {
+          console.error(`❌ Port ${PORT} is already in use`);
+          console.error(`💡 Try: lsof -i :${PORT} to see what's using it`);
+        } else if (err.code === 'EACCES') {
+          console.error(`❌ Permission denied to bind to port ${PORT}`);
+          console.error(`💡 Try using a port number > 1024`);
+        } else {
+          console.error(`❌ Server error:`, err);
+        }
+        reject(err);
       });
     });
-
-    // Setup frontend serving based on environment with fallback
-    if (process.env.NODE_ENV === 'production') {
-      try {
-        // Try to serve static files in production
-        serveStatic(app);
-        log("Production mode: serving static files from dist directory");
-      } catch (error) {
-        // Fallback to Vite middleware if static files aren't available
-        log("Static files not found, using Vite middleware fallback");
-        await setupVite(app, server);
-      }
-    } else {
-      // Development mode always uses Vite middleware
-      await setupVite(app, server);
-      log("Development mode: using Vite middleware");
-    }
-
-    // API fallback middleware - ensure unmatched API routes return 404 JSON instead of HTML
-    app.use('/api/*', (req: Request, res: Response) => {
-      res.status(404).json({ 
-        error: 'API endpoint not found',
-        path: req.originalUrl,
-        method: req.method
-      });
-    });
-
-    // Global error handler - placed after Vite setup to catch all errors
-    app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {
-      const status = err.status || err.statusCode || 500;
-      const message = err.message || "Internal Server Error";
-      
-      log(`Error: ${status} - ${message}`);
-      res.status(status).json({ message });
-      
-      // Don't throw the error to prevent server crash
-      if (status >= 500) {
-        console.error('Server error:', err);
-      }
-    });
-
-    // ALWAYS serve the app on port 5000
-    // this serves both the API and the client.
-    // It is the only port that is not firewalled.
-    const port = 5000;
-    server.listen({
-      port,
-      host: "0.0.0.0",
-      reusePort: true,
-    }, () => {
-      log(`Server successfully started on port ${port}`);
-      log(`Health check available at http://localhost:${port}/health`);
-    });
-
-    // Handle graceful shutdown
-    process.on('SIGTERM', () => {
-      log('SIGTERM received, shutting down gracefully');
-      server.close(() => {
-        log('Process terminated');
-        process.exit(0);
-      });
-    });
-
-  } catch (error) {
-    console.error('Failed to start server:', error);
+  } catch (err) {
+    console.error('Failed to start server:', err);
     process.exit(1);
   }
+
+  // Graceful shutdown handlers
+  const gracefulShutdown = (signal: string) => {
+    console.log(`\n📴 ${signal} received, starting graceful shutdown...`);
+
+    server.close(() => {
+      console.log('✅ HTTP server closed');
+
+      // Add any cleanup logic here (close DB connections, etc.)
+      process.exit(0);
+    });
+
+    // Force shutdown after 10 seconds
+    setTimeout(() => {
+      console.error('❌ Could not close connections in time, forcefully shutting down');
+      process.exit(1);
+    }, 10000);
+  };
+
+  process.on('SIGTERM', () => gracefulShutdown('SIGTERM'));
+  process.on('SIGINT', () => gracefulShutdown('SIGINT'));
+
+  // Handle uncaught errors
+  process.on('uncaughtException', (err) => {
+    console.error('❌ Uncaught Exception:', err);
+    process.exit(1);
+  });
+
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('❌ Unhandled Rejection at:', promise, 'reason:', reason);
+    process.exit(1);
+  });
 })();
