@@ -298,7 +298,7 @@ const EditVendor: React.FC<EditVendorProps> = ({ vendorId, onClose, onUpdated })
             <button
               type="submit"
               disabled={saving}
-              className="px-4 py-1.5 bg-green-600 text-white text-sm rounded hover:bg-green-700 disabled:opacity-50"
+              className="px-4 py-1.5 bg-tracer-green text-white text-sm rounded hover:bg-tracer-green/90 disabled:opacity-50"
             >
               {saving ? 'Saving...' : 'Save Changes'}
             </button>

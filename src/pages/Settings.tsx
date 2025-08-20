@@ -180,7 +180,7 @@ export default function Settings() {
                 placeholder="New password"
               />
               <span
-                className="absolute right-3 top-10 cursor-pointer text-yellow-400"
+                className="absolute right-3 top-10 cursor-pointer text-tracer-green"
                 onClick={() => setShowPassword(!showPassword)}
               >
                 {showPassword ? <FiEyeOff /> : <FiEye />}
@@ -199,7 +199,7 @@ export default function Settings() {
                 placeholder="Confirm password"
               />
               <span
-                className="absolute right-3 top-10 cursor-pointer text-yellow-400"
+                className="absolute right-3 top-10 cursor-pointer text-tracer-green"
                 onClick={() => setShowConfirmPassword(!showConfirmPassword)}
               >
                 {showConfirmPassword ? <FiEyeOff /> : <FiEye />}
@@ -216,7 +216,7 @@ export default function Settings() {
           {/* Submit Button */}
           <button
             type="submit"
-            className="w-full py-3 bg-yellow-400 text-black font-bold rounded-lg hover:bg-yellow-500 transition-colors disabled:opacity-60"
+            className="w-full py-3 bg-tracer-blue text-white font-bold rounded-lg hover:bg-tracer-blue/90 transition-colors disabled:opacity-60"
             disabled={loading}
           >
             {loading ? "Saving..." : "Save Changes"}

@@ -10,6 +10,7 @@ import {
   X,
   Pencil,
   Trash2,
+  Shield
 } from "lucide-react";
 import axios from "axios";
 import EditVendor from '../components/EditVendor';
@@ -30,13 +31,11 @@ import {
 import { CSS } from '@dnd-kit/utilities';
 import type { UniqueIdentifier, DragEndEvent } from '@dnd-kit/core';
 
-const categories = [
-  { id: "processors", name: "Processors", icon: CreditCard },
-  { id: "gateways", name: "Gateways", icon: Router },
-  { id: "hardware", name: "Hardware/Equipment", icon: HardDrive },
-];
+// const value = localStorage.getItem("auth_user");
+// const parsedUser = value ? JSON.parse(value) : null;
+// const roleId = parsedUser.role_id;
 
-const categoryIds = ['processors', 'gateways', 'hardware'];
+const categoryIds = ['processors', 'gateways', 'hardware', 'internal'];
 
 interface VendorTemplate {
   id: number;
@@ -82,10 +81,10 @@ interface VendorLoginModalProps {
 function VendorLoginModal({ vendor, onClose }: VendorLoginModalProps) {
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-zinc-900 p-6 rounded-xl w-full max-w-md relative shadow-2xl border border-yellow-400/30">
+      <div className="bg-zinc-900 p-6 rounded-xl w-full max-w-md relative shadow-2xl border border-tracer-blue/30">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-400 hover:text-yellow-400 transition-colors"
+          className="absolute top-4 right-4 text-gray-400 hover:text-tracer-green transition-colors"
         >
           <X className="h-6 w-6" />
         </button>
@@ -99,19 +98,19 @@ function VendorLoginModal({ vendor, onClose }: VendorLoginModalProps) {
                 <img
                   src={`${import.meta.env.VITE_IMAGE_URL}${vendor.logo_url}`}
                   alt={vendor.vendor_name}
-                  className="w-14 h-14 object-contain rounded-full border-2 border-yellow-400 bg-white shadow"
+                  className="w-14 h-14 object-contain rounded-full border-2 border-tracer-green bg-white shadow"
                 />
               </a>
             ) : (
               <img
                 src={`${import.meta.env.VITE_IMAGE_URL}${vendor.logo_url}`}
                 alt={vendor.vendor_name}
-                className="w-14 h-14 object-contain rounded-full border-2 border-yellow-400 bg-white shadow"
+                className="w-14 h-14 object-contain rounded-full border-2 border-tracer-green bg-white shadow"
               />
             )
           ) : (
-            <div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center border-2 border-yellow-400">
-              <span className="text-2xl font-bold text-yellow-400">
+            <div className="w-14 h-14 bg-zinc-800 rounded-full flex items-center justify-center border-2 border-tracer-green">
+              <span className="text-2xl font-bold text-tracer-green">
                 {vendor.vendor_name.charAt(0)}
               </span>
             </div>
@@ -119,7 +118,7 @@ function VendorLoginModal({ vendor, onClose }: VendorLoginModalProps) {
 
           {/* Vendor Name */}
           <div className="flex-1 text-center">
-            <h2 className="text-2xl font-extrabold text-yellow-400 drop-shadow mb-1">{vendor.vendor_name}</h2>
+            <h2 className="text-2xl font-extrabold text-tracer-green drop-shadow mb-1">{vendor.vendor_name}</h2>
             <p className="text-gray-400 text-xs tracking-wide">Vendor Portal</p>
           </div>
 
@@ -139,38 +138,55 @@ function VendorLoginModal({ vendor, onClose }: VendorLoginModalProps) {
         <div className="space-y-2 mb-4">
           {vendor.vendor_email && (
             <div className="flex items-center bg-zinc-800/70 rounded px-3 py-2 text-sm">
-              <span className="font-semibold text-yellow-400 w-28">Email:</span>
+              <span className="font-semibold text-tracer-green w-28">Email:</span>
               <span className="text-gray-200">{vendor.vendor_email}</span>
             </div>
           )}
           {vendor.vendor_phone && (
             <div className="flex items-center bg-zinc-800/70 rounded px-3 py-2 text-sm">
-              <span className="font-semibold text-yellow-400 w-28">Phone:</span>
+              <span className="font-semibold text-tracer-green w-28">Phone:</span>
               <span className="text-gray-200">{vendor.vendor_phone}</span>
             </div>
           )}
           {vendor.rep_name && (
             <div className="flex items-center bg-zinc-800/70 rounded px-3 py-2 text-sm">
-              <span className="font-semibold text-yellow-400 w-28">Contact Name:</span>
+              <span className="font-semibold text-tracer-green w-28">Contact Name:</span>
               <span className="text-gray-200">{vendor.rep_name}</span>
             </div>
           )}
+
+
+          {vendor.rep_email && (
+            <div className="flex items-center bg-zinc-800/70 rounded px-3 py-2 text-sm">
+              <span className="font-semibold text-tracer-green w-28">Contact Email:</span>
+              <span className="text-gray-200">{vendor.rep_email}</span>
+            </div>
+          )}
+
           {vendor.support_info && (
             <div className="flex items-center bg-zinc-800/70 rounded px-3 py-2 text-sm">
-              <span className="font-semibold text-yellow-400 w-28">Support:</span>
+              <span className="font-semibold text-tracer-green w-28">Support:</span>
               <span className="text-gray-200">{vendor.support_info}</span>
             </div>
           )}
+
+          {vendor.rep_phone && (
+            <div className="flex items-center bg-zinc-800/70 rounded px-3 py-2 text-sm">
+              <span className="font-semibold text-tracer-green w-28">Rep Phone:</span>
+              <span className="text-gray-200">{vendor.rep_phone}</span>
+            </div>
+          )}
+
           {vendor.notes && (
             <div className="flex items-center bg-zinc-800/70 rounded px-3 py-2 text-sm">
-              <span className="font-semibold text-yellow-400 w-28">Notes:</span>
+              <span className="font-semibold text-tracer-green w-28">Notes:</span>
               <span className="text-gray-200">{vendor.notes}</span>
             </div>
           )}
         </div>
 
-        <div className="bg-yellow-400/10 rounded-lg p-4 mt-4">
-          <h3 className="text-lg font-semibold text-yellow-400 mb-2 text-center">Important Information</h3>
+        <div className="bg-tracer-green/10 rounded-lg p-4 mt-4">
+          <h3 className="text-lg font-semibold text-tracer-green mb-2 text-center">Important Information</h3>
           <ul className="text-gray-200 space-y-1 text-sm text-center">
             <li>• Make sure you have your login credentials ready</li>
             <li>• Keep your session secure and don't share your access</li>
@@ -323,6 +339,21 @@ export default function Logins() {
   const parsedUser = JSON.parse(localStorage.getItem("auth_user") || "{}");
   const role_id = parsedUser.role_id;
 
+  const categories = [
+    { id: "gateways", name: "Gateways", icon: Router },
+    { id: "hardware", name: "Hardware/Equipment", icon: HardDrive },
+    // { id: "internal", name: "Internal", icon: Shield }, // <- updated
+    // { id: "processors", name: "Processors", icon: CreditCard },
+  ];
+
+  // Conditionally add "internal"
+  if (role_id == 1 || role_id == 2) {
+    categories.push({ id: "internal", name: "Internal", icon: Shield });
+  }
+
+  // Add remaining item
+  categories.push({ id: "processors", name: "Processors", icon: CreditCard });
+
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: {
@@ -348,6 +379,7 @@ export default function Logins() {
         throw new Error("Authentication token not found. Please login again.");
       }
       const parsedUser = JSON.parse(localStorage.getItem("auth_user") || "{}");
+      // const role_id =parsedUser?.role_id;
       const body: any = {};
       if (parsedUser?.role_id !== 2) {
         body.user_id = parsedUser.id;
@@ -379,6 +411,9 @@ export default function Logins() {
             (a.card_order ?? Infinity) - (b.card_order ?? Infinity)
           ),
           hardware: (vendorsByType.hardware || []).sort((a: any, b: any) => 
+            (a.card_order ?? Infinity) - (b.card_order ?? Infinity)
+          ),
+          internal: (vendorsByType.internal || []).sort((a: any, b: any) => 
             (a.card_order ?? Infinity) - (b.card_order ?? Infinity)
           ),
         };
@@ -768,17 +803,20 @@ export default function Logins() {
     }
   };
 
+  console.log('items',categories);
+  console.log('vendors222',vendors);
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
       <Toaster position="top-right" reverseOrder={false} />
       {/* Header */}
-      <div className="mb-8 bg-yellow-400 rounded-lg p-6 shadow-lg">
+      <div className="mb-8 bg-tracer-green rounded-lg p-6 shadow-lg">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-3">
-            <CreditCard className="h-10 w-10 text-black" />
+            <CreditCard className="h-10 w-10 text-white" />
             <div>
-              <h1 className="text-3xl font-bold text-black">Login Portal</h1>
-              <p className="text-black/80 mt-1">
+              <h1 className="text-3xl font-bold text-white">Login Portal</h1>
+              <p className="text-white/80 mt-1">
                 Access all your processor, gateway, and vendor logins in one
                 place.
               </p>
@@ -829,7 +867,7 @@ export default function Logins() {
                   <button
                     onClick={() => openAddVendorModal(category.id)}
                     disabled={isLoading}
-                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-green-600 hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500 disabled:opacity-50 disabled:cursor-not-allowed"
+                    className="inline-flex items-center px-3 py-1.5 border border-transparent text-sm font-medium rounded-md text-white bg-tracer-green hover:bg-tracer-green/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tracer-green disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {isLoading ? (
                       <span className="flex items-center">
@@ -898,7 +936,7 @@ export default function Logins() {
             <div className="flex justify-between items-center mb-2">
               <button
                 onClick={addVendorCard}
-                className="px-2 py-1 text-xs font-medium text-white bg-green-600 border border-transparent rounded hover:bg-green-700"
+                className="px-2 py-1 text-xs font-medium text-white bg-tracer-green border border-transparent rounded hover:bg-tracer-blue"
               >
                 + Add Card
               </button>
@@ -1102,13 +1140,13 @@ export default function Logins() {
             <div className="flex justify-end space-x-3 mt-4">
               <button
                 onClick={() => setShowAddVendorModal(false)}
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tracer-green"
               >
                 Cancel
               </button>
               <button
                 onClick={handleSubmit}
-                className="px-4 py-2 text-sm font-medium text-white bg-green-600 border border-transparent rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-green-500"
+                className="px-4 py-2 text-sm font-medium text-white bg-tracer-green border border-transparent rounded-md hover:bg-tracer-blue focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-tracer-green"
               >
                 Add Vendor(s)
               </button>

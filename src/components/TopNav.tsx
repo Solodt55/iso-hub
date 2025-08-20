@@ -57,21 +57,26 @@ export default function TopNav({
         }
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to fetch notifications..');
-      }
-
       const data = await response.json();
-      // console.log(data,'get data');
+      // console.log(data);
+      // return false;
+
+      if(data && data.message == 'Unauthorized'){
+          handleLogout();
+      }
+      console.log('get data',data);
       if (data.status === 'success') {
         setUserNotificationCount(data.count);
         // console.log(data);
       } else {
-        throw new Error(data.message || 'Failed to fetch');
+        handleLogout();
       }
     } catch (error) {
       console.error('Error fetching notifications:', error);
       toast.error('Failed to fetch notifications');
+      setTimeout(() => {
+        handleLogout();
+      }, 1000);
     }
   }
 
@@ -124,7 +129,7 @@ export default function TopNav({
   };
 
   return (
-    <header className="bg-zinc-900 border-b border-yellow-400/20">
+    <header className="bg-zinc-900 border-b border-tracer-green/20">
       <nav className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between h-16">
           <div className="flex">
@@ -135,9 +140,9 @@ export default function TopNav({
                   href={item.href}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex items-center px-4 py-2 border-b-2 border-transparent hover:border-yellow-400 text-sm font-medium text-gray-300 hover:text-yellow-400 relative group"
+                  className="inline-flex items-center px-4 py-2 border-b-2 border-transparent hover:border-tracer-green text-sm font-medium text-gray-300 hover:text-tracer-green relative group"
                 >
-                  <item.icon className="h-5 w-5 mr-2 text-gray-400 group-hover:text-yellow-400" />
+                  <item.icon className="h-5 w-5 mr-2 text-gray-400 group-hover:text-tracer-green" />
                   {item.name}
                 </a>
               ) : (
@@ -146,10 +151,10 @@ export default function TopNav({
                   to={item.href}
                   className={`inline-flex items-center px-4 py-2 mx-1 border-b-2 text-sm font-medium relative group transition-all
                     ${isActive(item.href)
-                      ? 'border-yellow-400 text-yellow-400'
-                      : 'border-transparent text-gray-300 hover:border-yellow-400 hover:text-yellow-400'}`}
+                      ? 'border-tracer-green text-tracer-green'
+                      : 'border-transparent text-gray-300 hover:border-tracer-green hover:text-tracer-green'}`}
                 >
-                  <item.icon className={`h-5 w-5 mr-2 ${isActive(item.href) ? 'text-yellow-400' : 'text-gray-400 group-hover:text-yellow-400'}`} />
+                  <item.icon className={`h-5 w-5 mr-2 ${isActive(item.href) ? 'text-tracer-green' : 'text-gray-400 group-hover:text-tracer-green'}`} />
                   {item.name}
                 </Link>
               )
@@ -158,12 +163,12 @@ export default function TopNav({
           <div className="flex items-center gap-4">
             <button
               onClick={updateNotificationCount}
-              className="p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 border border-yellow-400/20"
+              className="p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 border border-tracer-green/20"
             >
               <span className="sr-only">View notifications</span>
               <div className="relative">
                 {userNotificationCount > 0 && (
-                  <div className="absolute -top-2 -right-1 h-4 w-4 bg-yellow-400 text-black text-[12px] font-bold flex items-center justify-center rounded-full">
+                  <div className="absolute -top-2 -right-1 h-4 w-4 bg-tracer-green text-white text-[12px] font-bold flex items-center justify-center rounded-full">
                     {userNotificationCount}
                   </div>
                 )}
@@ -180,7 +185,7 @@ export default function TopNav({
 
             <button
               onClick={handleLogout}
-              className="p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 border border-yellow-400/20 text-white hover:text-yellow-400 transition-colors"
+              className="p-2 rounded-full bg-zinc-800 hover:bg-zinc-700 border border-tracer-green/20 text-white hover:text-tracer-green transition-colors"
             >
               <div className="relative">
                 <LogOut className='w-[20px] h-[20px]' />

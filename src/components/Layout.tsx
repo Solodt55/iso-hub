@@ -6,8 +6,12 @@ import TopNav from './TopNav';
 const topMenuItems = [
   // { name: 'Dashboard', href: '/', icon: LayoutDashboard },
   // { name: 'Residuals', href: 'https://dev.tracerpos.com/', icon: FileText },
+
+// { name: 'ISO-AI', icon: Cpu, href: 'https://02aa0592-869c-416a-869f-4cb3baafbabd-00-17ngv8bepjtga.picard.replit.dev' , external: true},
+
   { name: 'Logins', href: '/logins', icon: Key },
-  { name: 'Document Center', href: '/documents', icon: FileText },
+  // { name: 'Document Center', href: '/documents', icon: FileText },
+  { name: 'Document Center', href: 'https://02aa0592-869c-416a-869f-4cb3baafbabd-00-17ngv8bepjtga.picard.replit.dev', icon: FileText, external: true },
   { name: 'Pre-Applications', href: '/applications', icon: FormInput },
   { name: 'Secured Doc Portal', href: '/secure', icon: Shield },
   { name: 'Marketing', href: '/marketing', icon: Megaphone },

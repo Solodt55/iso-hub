@@ -237,7 +237,7 @@ const RepModal: React.FC<RepModalProps> = ({ onClose, onSave, fetchReps }) => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-yellow-400 text-black py-2 rounded font-medium hover:bg-yellow-500 transition-colors mt-6 flex items-center justify-center"
+            className="w-full bg-tracer-green text-white py-2 rounded font-medium hover:bg-tracer-green/90 transition-colors mt-6 flex items-center justify-center"
           >
             {isSubmitting ? (
               <>
@@ -404,7 +404,7 @@ const EditRepModal: React.FC<EditRepModalProps> = ({ rep, onClose, onUpdate, use
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full bg-yellow-400 text-black py-2 rounded font-medium hover:bg-yellow-500 transition-colors mt-6 flex items-center justify-center"
+            className="w-full bg-tracer-green text-white py-2 rounded font-medium hover:bg-tracer-green/90 transition-colors mt-6 flex items-center justify-center"
           >
             {isSubmitting ? (
               <>
@@ -542,7 +542,7 @@ export default function Reps() {
       
       <button
         onClick={() => setShowModal(true)}
-        className="bg-yellow-400 text-black px-6 py-2 rounded font-medium hover:bg-yellow-500 transition-colors mb-6"
+        className="bg-tracer-green text-white px-6 py-2 rounded font-medium hover:bg-tracer-green/90 transition-colors mb-6"
       >
         ADD REP
       </button>

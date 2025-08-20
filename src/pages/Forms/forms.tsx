@@ -64,33 +64,13 @@ export default function Forms() {
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* Header */}
-      <div className="mb-8 bg-yellow-400 rounded-lg p-6 shadow-lg">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <FileText className="h-10 w-10 text-black" />
-            <div>
-              <h2 className="text-3xl font-bold text-black">Forms</h2>
-              <p className="text-black/80 mt-1">
-                Create and manage forms for your organization
-              </p>
-            </div>
+      <div className="mb-8 bg-tracer-green rounded-lg p-6 shadow-lg">
+        <div className="flex items-center space-x-3">
+          <FileText className="h-10 w-10 text-white" />
+          <div>
+            <h1 className="text-3xl font-bold text-white">Forms</h1>
+            <p className="text-white/80 mt-1">Manage your application forms</p>
           </div>
-          <button
-            onClick={() => setShowCreateForm(!showCreateForm)}
-            className="flex items-center px-4 py-2 bg-black text-white rounded-lg hover:bg-black/80"
-          >
-            {showCreateForm ? (
-              <>
-                <X className="h-5 w-5 mr-2" />
-                Cancel
-              </>
-            ) : (
-              <>
-                <Plus className="h-5 w-5 mr-2" />
-                Create Form
-              </>
-            )}
-          </button>
         </div>
       </div>
 

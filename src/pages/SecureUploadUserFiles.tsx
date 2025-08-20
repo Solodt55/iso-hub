@@ -262,7 +262,7 @@ const SecureUploadUserFiles: React.FC = () => {
               </p>
               <button
                 onClick={handleBrowseClick}
-                className="bg-yellow-400 rounded py-2 px-6 font-semibold text-black hover:bg-yellow-500 transition-colors"
+                className="bg-tracer-green rounded py-2 px-6 font-semibold text-white hover:bg-tracer-green/90 transition-colors"
               >
                 Select Files
               </button>
@@ -409,7 +409,7 @@ const SecureUploadUserFiles: React.FC = () => {
               <button
                 onClick={handleUpload}
                 disabled={isUploading}
-                className="w-full bg-yellow-400 rounded py-2.5 font-semibold text-black hover:bg-yellow-500 disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
+                className="w-full bg-tracer-green rounded py-2.5 font-semibold text-white hover:bg-tracer-green/90 disabled:opacity-50 flex items-center justify-center gap-2 text-sm"
               >
                 {isUploading ? (
                   <>

@@ -211,7 +211,7 @@ export default function PitchDeck({ onClose }: PitchDeckProps) {
       <div className="relative w-full max-w-6xl mx-auto px-4">
         {/* Slide */}
         <div 
-          className="relative overflow-hidden rounded-2xl bg-zinc-900 border border-yellow-400/20 cursor-pointer"
+          className="relative overflow-hidden rounded-2xl bg-zinc-900 border border-tracer-green/20 cursor-pointer"
           onClick={handleSlideClick}
         >
           <div 
@@ -221,7 +221,7 @@ export default function PitchDeck({ onClose }: PitchDeckProps) {
           <div className="relative z-10 p-12">
             <div className="flex items-center space-x-4 mb-8">
               {React.createElement(slides[currentSlide].icon, {
-                className: "h-12 w-12 text-yellow-400"
+                className: "h-12 w-12 text-tracer-green"
               })}
               <h2 className="text-4xl font-bold text-white">
                 {slides[currentSlide].title}
@@ -237,16 +237,16 @@ export default function PitchDeck({ onClose }: PitchDeckProps) {
         <div className="absolute inset-x-0 bottom-4 flex items-center justify-center space-x-4">
           <button
             onClick={prevSlide}
-            className="p-2 rounded-full bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20 transition-colors"
+            className="p-2 rounded-full bg-tracer-green/10 text-tracer-green hover:bg-tracer-green/20 transition-colors"
           >
             <ChevronLeft className="h-6 w-6" />
           </button>
-          <div className="text-yellow-400">
+          <div className="text-tracer-green">
             {currentSlide + 1} / {slides.length}
           </div>
           <button
             onClick={nextSlide}
-            className="p-2 rounded-full bg-yellow-400/10 text-yellow-400 hover:bg-yellow-400/20 transition-colors"
+            className="p-2 rounded-full bg-tracer-green/10 text-tracer-green hover:bg-tracer-green/20 transition-colors"
           >
             <ChevronRight className="h-6 w-6" />
           </button>

@@ -100,7 +100,7 @@ export default function EditUsers() {
           </div>
           <button
             type="submit"
-            className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 rounded font-medium uppercase transition duration-200"
+            className="w-full bg-tracer-blue hover:bg-tracer-blue/90 text-white py-3 rounded font-medium uppercase transition duration-200"
           >
             Save
           </button>

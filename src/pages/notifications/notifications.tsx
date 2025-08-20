@@ -100,7 +100,7 @@ export default function Notifications() {
     <Toaster position="top-right" reverseOrder={false} />
       <div className="user_cont my-10">
         <div className="flex justify-between items-center">
-          <div className="w-full text-center bg-yellow-500 hover:bg-yellow-600 text-white py-5 px-5 rounded font-medium uppercase transition duration-200">
+          <div className="w-full text-center bg-tracer-blue hover:bg-tracer-blue/90 text-white py-5 px-5 rounded font-medium uppercase transition duration-200">
             All Notifications
           </div>
           {adminNotification.length > 0 && (
@@ -118,7 +118,7 @@ export default function Notifications() {
       <div className="user_data_wrap mt-10">
         {isLoading ? (
           <div className="flex justify-center items-center py-8">
-            <Loader2 className="h-8 w-8 animate-spin text-yellow-400" />
+            <Loader2 className="h-8 w-8 animate-spin text-tracer-green" />
           </div>
         ) : adminNotification.length > 0 ? (
           adminNotification.map((item: any, index: number) => (

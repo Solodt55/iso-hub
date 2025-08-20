@@ -48,7 +48,7 @@ export default function JACC() {
       <button
         id="jacc-button"
         onClick={() => setIsMinimized(false)}
-        className="fixed bottom-4 right-4 p-4 bg-zinc-900 rounded-full shadow-xl border border-yellow-400/20 text-yellow-400 hover:bg-zinc-800 transition-colors duration-200"
+        className="fixed bottom-4 right-4 p-4 bg-zinc-900 rounded-full shadow-xl border border-tracer-green/20 text-tracer-green hover:bg-zinc-800 transition-colors duration-200"
       >
         {/* <Bot className="h-6 w-6" /> */}
       </button>
@@ -56,13 +56,13 @@ export default function JACC() {
   }
 
   return (
-    <div className="fixed bottom-4 right-4 w-full max-w-md bg-zinc-900 rounded-lg shadow-xl border border-yellow-400/20 flex flex-col" style={{ height: '600px' }}>
-      <div className="p-4 border-b border-yellow-400/20 flex items-center justify-between">
+    <div className="fixed bottom-4 right-4 w-full max-w-md bg-zinc-900 rounded-lg shadow-xl border border-tracer-green/20 flex flex-col" style={{ height: '600px' }}>
+      <div className="p-4 border-b border-tracer-green/20 flex items-center justify-between">
         <div className="flex items-center space-x-2">
-          <Bot className="h-6 w-6 text-yellow-400" />
+          <Bot className="h-6 w-6 text-tracer-green" />
           <div>
             <h3 className="font-semibold text-white">JACC</h3>
-            <p className="text-xs text-yellow-400/60">Your ISO Documentation Assistant</p>
+            <p className="text-xs text-tracer-green/60">Your ISO Documentation Assistant</p>
           </div>
         </div>
         <button

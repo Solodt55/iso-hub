@@ -399,7 +399,7 @@ const SecurePortal: React.FC = () => {
           <div className="flex mb-6">
             <button
               onClick={() => setIsModalOpen(true)}
-              className="bg-yellow-500 hover:bg-yellow-600 text-white py-2 px-4 rounded flex items-center gap-2"
+              className="bg-tracer-green hover:bg-tracer-blue text-white py-2 px-4 rounded flex items-center gap-2"
             >
               <Mail className="w-4 h-4" />
               Send Upload Link
@@ -409,7 +409,7 @@ const SecurePortal: React.FC = () => {
           <div className="added-wrap mt-10 text-white">
             {isLoadingFiles ? (
               <div className="text-center py-8">
-                <div className="w-8 h-8 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <div className="w-8 h-8 border-2 border-tracer-green border-t-transparent rounded-full animate-spin mx-auto"></div>
                 <p className="mt-4 text-gray-400">Loading files...</p>
               </div>
             ) : files.length === 0 ? (
@@ -434,14 +434,14 @@ const SecurePortal: React.FC = () => {
                   return (
                     <div
                       key={file.id}
-                      className="group mt-5 w-full px-5 py-3 rounded bg-zinc-900 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500 relative"
+                      className="group mt-5 w-full px-5 py-3 rounded bg-zinc-900 text-white focus:outline-none focus:ring-2 focus:ring-tracer-green relative"
                       onMouseEnter={() => setHoveredFileId(file.id)}
                       onMouseLeave={() => setHoveredFileId(null)}
                     >
                       <div className="flex flex-col">
                         <p className="uploaded-file-name">
                           <span
-                            className="cursor-pointer hover:text-yellow-600"
+                            className="cursor-pointer hover:text-tracer-blue"
                             onClick={() =>
                               window.open(
                                 `${import.meta.env.VITE_IMAGE_URL}${
@@ -469,7 +469,7 @@ const SecurePortal: React.FC = () => {
 
                       {/* Preview Popup */}
                       {hoveredFileId === file.id && (
-                        <div className="absolute left-0 top-full mt-2 z-50 bg-zinc-900 border border-yellow-400/40 rounded shadow-lg p-2 min-w-[120px] max-w-[220px] flex flex-col items-center">
+                        <div className="absolute left-0 top-full mt-2 z-50 bg-zinc-900 border border-tracer-green/40 rounded shadow-lg p-2 min-w-[120px] max-w-[220px] flex flex-col items-center">
                           {isImage ? (
                             <img
                               src={fileUrl}
@@ -479,7 +479,7 @@ const SecurePortal: React.FC = () => {
                             />
                           ) : (
                             <div className="flex flex-col items-center justify-center py-4">
-                              <Download className="w-10 h-10 text-yellow-400 mb-2" />
+                              <Download className="w-10 h-10 text-tracer-green mb-2" />
                               <span className="text-xs text-gray-400">
                                 Preview not available
                               </span>
@@ -491,11 +491,11 @@ const SecurePortal: React.FC = () => {
                       <div className="addedDetail absolute right-[20px] top-[50%] translate-y-[-50%] hidden group-hover:block">
                         <ul className="flex gap-4 align-center">
                           <li
-                            className="cursor-pointer hover:text-yellow-600"
+                            className="cursor-pointer hover:text-tracer-blue"
                             onClick={() => handleDownload(file)}
                           >
                             {isDownloading ? (
-                              <div className="w-5 h-5 border-2 border-yellow-400 border-t-transparent rounded-full animate-spin" />
+                              <div className="w-5 h-5 border-2 border-tracer-green border-t-transparent rounded-full animate-spin" />
                             ) : (
                               <Download />
                             )}
@@ -553,7 +553,7 @@ const SecurePortal: React.FC = () => {
                   name="name"
                   value={formData.name}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  className="w-full px-4 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-tracer-green"
                   required
                 />
               </div>
@@ -565,7 +565,7 @@ const SecurePortal: React.FC = () => {
                   name="email"
                   value={formData.email}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  className="w-full px-4 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-tracer-green"
                   required
                 />
               </div>
@@ -576,7 +576,7 @@ const SecurePortal: React.FC = () => {
                   name="formId"
                   value={formData.formId}
                   onChange={handleInputChange}
-                  className="w-full px-4 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-yellow-500"
+                  className="w-full px-4 py-2 rounded bg-gray-700 text-white focus:outline-none focus:ring-2 focus:ring-tracer-green"
                   required
                 >
                   <option value="">Select From Pre-Application List</option>
@@ -592,7 +592,7 @@ const SecurePortal: React.FC = () => {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-5 rounded font-medium uppercase transition duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
+                  className="w-full bg-tracer-green hover:bg-tracer-blue text-white py-3 px-5 rounded font-medium uppercase transition duration-200 disabled:opacity-50 flex items-center justify-center gap-2"
                 >
                   {isLoading ? (
                     <>
@@ -645,7 +645,7 @@ const SecurePortal: React.FC = () => {
               <p className="text-gray-300">
                 Are you sure you want to delete this file?
               </p>
-              <p className="text-yellow-400 font-medium">
+              <p className="text-tracer-green font-medium">
                 {fileToDelete.file_path.split("/").pop()}
               </p>
 

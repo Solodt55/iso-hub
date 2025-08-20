@@ -3,6 +3,51 @@ import { Calendar } from "lucide-react"; // Replace or remove if not using this 
 
 const OwnerForm = ({ formData, setFormData }) => {
   const [ownerCount, setOwnerCount] = useState("");
+  const [fileErrors, setFileErrors] = useState({});
+
+  const getFileIcon = (fileName: string): string | undefined => {
+    const extension = fileName.split('.').pop()?.toLowerCase();
+  
+    switch (extension) {
+      case 'pdf':
+        return "/pdf_file.png";
+      case 'doc':
+      case 'docx':
+        return "/docs_file.png";
+      case 'xls':
+      case 'xlsx':
+        return "/xls_file.png";
+      case 'ppt':
+      case 'pptx':
+        return "/ppt_file.png";
+      case 'txt':
+        return "/txt_file.png";
+      case 'csv':
+        return "/csv_file.png";
+      case 'zip':
+      case 'rar':
+      case '7z':
+      case 'tar':
+      case 'gz':
+        return "/gz_file.png"; // Archive icon
+      case 'jpg':
+      case 'jpeg':
+      case 'png':
+      case 'gif':
+      case 'bmp':
+      case 'svg':
+      case 'webp':
+        return undefined; // Show actual image preview
+      default:
+        return "/default_file.png"; // Generic/default file icon
+    }
+  };
+  
+
+  const isImageFile = (fileName: string) => {
+    const extension = fileName.split('.').pop()?.toLowerCase();
+    return extension ? ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'svg', 'webp'].includes(extension) : false;
+  };
 
   const handleOwnerChange = (e) => {
     const count = parseInt(e.target.value, 10);
@@ -116,6 +161,7 @@ const OwnerForm = ({ formData, setFormData }) => {
           className="mt-1 block w-1/2 rounded-md border-gray-300 shadow-sm"
           value={ownerCount}
           onChange={handleOwnerChange}
+          required
         >
           <option value="">
             Select Owner
@@ -179,6 +225,7 @@ const OwnerForm = ({ formData, setFormData }) => {
                   </label>
                   <input
                     type="text"
+                    required
                     name="owner_street_address"
                     value={owner.owner_street_address}
                     onChange={(e) => handleInputChange(index, e)}
@@ -192,6 +239,7 @@ const OwnerForm = ({ formData, setFormData }) => {
                   <input
                     type="text"
                     name="owner_street_address2"
+                    required
                     value={owner.owner_street_address2}
                     onChange={(e) => handleInputChange(index, e)}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
@@ -204,6 +252,7 @@ const OwnerForm = ({ formData, setFormData }) => {
                   </label>
                   <input
                     type="text"
+                    required
                     name="ownership_phone_number"
                     value={owner.ownership_phone_number}
                     onChange={(e) => handleInputChange(index, e)}
@@ -219,6 +268,7 @@ const OwnerForm = ({ formData, setFormData }) => {
                   </label>
                   <input
                     type="text"
+                    required
                     name="ownership_city"
                     value={owner.ownership_city}
                     onChange={(e) => handleInputChange(index, e)}
@@ -231,6 +281,7 @@ const OwnerForm = ({ formData, setFormData }) => {
                   </label>
                   <input
                     type="text"
+                    required
                     name="ownership_state"
                     value={owner.ownership_state}
                     onChange={(e) => handleInputChange(index, e)}
@@ -244,6 +295,7 @@ const OwnerForm = ({ formData, setFormData }) => {
                   <input
                     type="text"
                     name="ownership_zip"
+                    required
                     value={owner.ownership_zip}
                     onChange={(e) => handleInputChange(index, e)}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
@@ -259,6 +311,7 @@ const OwnerForm = ({ formData, setFormData }) => {
                   <input
                     type="text"
                     name="ownership_percent"
+                    required
                     onChange={(e) => handleInputChange(index, e)}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
                   />
@@ -270,6 +323,7 @@ const OwnerForm = ({ formData, setFormData }) => {
                   <input
                     type="text"
                     name="ownership_title"
+                    required
                     value={owner.ownership_title}
                     onChange={(e) => handleInputChange(index, e)}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
@@ -282,6 +336,7 @@ const OwnerForm = ({ formData, setFormData }) => {
                   </label>
                   <input
                     type="email"
+                    required
                     name="ownership_email"
                     value={owner.ownership_email}
                     onChange={(e) => handleInputChange(index, e)}
@@ -299,6 +354,7 @@ const OwnerForm = ({ formData, setFormData }) => {
                     <input
                       type="date"
                       name="ownership_dob"
+                      required
                       value={owner.ownership_dob}
                       onChange={(e) => handleInputChange(index, e)}
                       className="mt-1 block w-full rounded bg-gray-700 text-white border border-gray-600 px-3 py-2"
@@ -313,6 +369,7 @@ const OwnerForm = ({ formData, setFormData }) => {
                   <input
                     type="text"
                     name="ownership_social_security_number"
+                    required
                     value={owner.ownership_social_security_number}
                     onChange={(e) => handleInputChange(index, e)}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
@@ -329,6 +386,7 @@ const OwnerForm = ({ formData, setFormData }) => {
                     value={owner.ownership_driver_licence_number}
                     onChange={(e) => handleInputChange(index, e)}
                     className="mt-1 block w-full rounded-md border-gray-300 shadow-sm"
+                    required
                   />
                 </div>
               </div>
@@ -379,11 +437,26 @@ const OwnerForm = ({ formData, setFormData }) => {
                         key={imageIndex}
                         className="flex items-center space-x-4 py-2 pl-2 pr-2 mt-3 bg-gray-800 rounded-md"
                       >
-                        <img
+
+                      {isImageFile(image.name) ? (
+                          <img
+                            src={image.url}
+                            alt={image.name}
+                            className="w-5 h-5 object-cover rounded"
+                          />
+                        ) : (
+                          <img
+                            src={getFileIcon(image.name)}
+                            alt="File icon"
+                            className="w-5 h-5 object-contain"
+                          />
+                        )}
+
+                        {/* <img
                           src={image.url}
                           alt={image.name}
                           className="w-5 h-5 object-cover rounded"
-                        />
+                        /> */}
                         <div className="flex-1">
                           <p className="text-sm font-medium text-white">
                             {image.name}

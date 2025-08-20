@@ -577,7 +577,7 @@ export default function AddVendorWizard({ onClose, onVendorAdded }: AddVendorWiz
           {step < 4 ? (
             <button
               onClick={nextStep}
-              className="ml-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center"
+              className="ml-auto px-4 py-2 bg-tracer-green text-white rounded-md hover:bg-tracer-green/90 focus:outline-none focus:ring-2 focus:ring-tracer-green flex items-center"
               disabled={loading}
             >
               Next
@@ -586,7 +586,7 @@ export default function AddVendorWizard({ onClose, onVendorAdded }: AddVendorWiz
           ) : (
             <button
               onClick={handleSubmit}
-              className="ml-auto px-4 py-2 bg-green-600 text-white rounded-md hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 flex items-center"
+              className="ml-auto px-4 py-2 bg-tracer-green text-white rounded-md hover:bg-tracer-green/90 focus:outline-none focus:ring-2 focus:ring-tracer-green flex items-center"
               disabled={loading}
             >
               {loading ? (

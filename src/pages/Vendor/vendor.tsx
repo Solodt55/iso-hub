@@ -191,7 +191,7 @@ export default function Vendor() {
       <div className="user_cont my-10">
         <button
           onClick={() => setIsModalOpen(true)}
-          className="w-fit bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-5 rounded font-medium uppercase transition duration-200 block"
+          className="w-fit bg-tracer-blue hover:bg-tracer-blue/90 text-white py-3 px-5 rounded font-medium uppercase transition duration-200 block"
         >
           Add Vendor
         </button>
@@ -310,7 +310,7 @@ export default function Vendor() {
               <div className="pt-4">
                 <button
                   type="submit"
-                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-5 rounded font-medium uppercase transition duration-200"
+                  className="w-full bg-tracer-blue hover:bg-tracer-blue/90 text-white py-3 px-5 rounded font-medium uppercase transition duration-200"
                 >
                   Add Vendor
                 </button>
@@ -394,7 +394,7 @@ export default function Vendor() {
               <div className="pt-4">
                 <button
                   type="submit"
-                  className="w-full bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-5 rounded font-medium uppercase transition duration-200"
+                  className="w-full bg-tracer-blue hover:bg-tracer-blue/90 text-white py-3 px-5 rounded font-medium uppercase transition duration-200"
                 >
                   Update Vendor
                 </button>

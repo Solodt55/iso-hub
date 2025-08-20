@@ -268,13 +268,13 @@ export default function Marketing() {
       <div className="relative">
         {/* Blur overlay and Coming Soon watermark - fixed to main content area only */}
         <div className="fixed top-16 left-[16rem] w-[calc(100vw-16rem)] h-full bg-black/10 backdrop-blur-[2px] z-50 flex items-center justify-center pointer-events-none">
-          <div className="text-4xl font-bold text-yellow-500/80 transform -rotate-12">
+          <div className="text-4xl font-bold text-tracer-green transform -rotate-12">
             Coming Soon
           </div>
         </div>
 
         {/* Header */}
-        <div className="mb-8 bg-yellow-400 rounded-lg p-6 shadow-lg">
+        <div className="mb-8 bg-tracer-green rounded-lg p-6 shadow-lg">
           <div className="flex items-center space-x-3">
             <Megaphone className="h-10 w-10 text-black" />
             <div>
@@ -291,7 +291,7 @@ export default function Marketing() {
            {/* onClick={() => setShowModal(true)} make true if working */}
           <button
             onClick={() => setShowModal(false)}
-            className="w-fit bg-yellow-400 rounded py-2 px-5 font-semibold uppercase flex items-center justify-center hover:bg-yellow-600 gap-2 text-black"
+            className="w-fit bg-tracer-green rounded py-2 px-5 font-semibold uppercase flex items-center justify-center hover:bg-tracer-green/90 gap-2 text-white"
           >
             Add New Category
           </button>
@@ -331,7 +331,7 @@ export default function Marketing() {
                     setItems([{ title: "", description: "" }]);
                     setShowItemModal(false);
                   }}
-                  className="w-fit bg-yellow-400 rounded py-1 px-3 text-xs font-semibold uppercase flex items-center justify-center hover:bg-yellow-600 gap-1 text-black"
+                  className="w-fit bg-tracer-green rounded py-1 px-3 text-xs font-semibold uppercase flex items-center justify-center hover:bg-tracer-green/90 gap-1 text-white"
                 >
                   Add item
                 </button>
@@ -385,7 +385,7 @@ export default function Marketing() {
               </button>
               <button
                 onClick={handleAddCategory}
-                className="bg-yellow-500 px-4 py-2 rounded text-white hover:bg-yellow-600"
+                className="bg-tracer-green px-4 py-2 rounded text-white hover:bg-tracer-green/90"
               >
                 Add
               </button>
@@ -443,7 +443,7 @@ export default function Marketing() {
               </button>
               <button
                 onClick={handleAddItemsToCategory}
-                className="bg-yellow-500 px-4 py-2 rounded text-white hover:bg-yellow-600"
+                className="bg-tracer-green px-4 py-2 rounded text-white hover:bg-tracer-green/90"
               >
                 Submit
               </button>
@@ -483,7 +483,7 @@ export default function Marketing() {
               </button>
               <button
                 onClick={handleUpdateItem}
-                className="bg-yellow-500 px-4 py-2 rounded text-white hover:bg-yellow-600"
+                className="bg-tracer-green px-4 py-2 rounded text-white hover:bg-tracer-green/90"
               >
                 Update
               </button>
@@ -515,7 +515,7 @@ export default function Marketing() {
               </button>
               <button
                 onClick={handleUpdateCat}
-                className="bg-yellow-500 px-4 py-2 rounded text-white hover:bg-yellow-600"
+                className="bg-tracer-green px-4 py-2 rounded text-white hover:bg-tracer-green/90"
               >
                 Update
               </button>

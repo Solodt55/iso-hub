@@ -16,6 +16,7 @@ import AddUsers from './pages/users/addUsers';
 import { LayoutDashboard } from 'lucide-react';
 import EditUsers from './pages/users/editUser';
 import Admin from './pages/admin/admin';
+import BirthdayNotify from './pages/BirthdayNotify';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './providers/AuthProvider';
 import { ProtectedRoute } from './components/ProtectedRoute';
@@ -37,12 +38,12 @@ import IsoAiPage from './pages/IsoAiPage';
 function Dashboard() {
   return (
     <div className="max-w-7xl mx-auto">
-      <div className="mb-8 bg-yellow-400 rounded-lg p-6 shadow-lg">
+      <div className="mb-8 bg-tracer-green rounded-lg p-6 shadow-lg">
         <div className="flex items-center space-x-3">
-          <LayoutDashboard className="h-10 w-10 text-black" />
+          <LayoutDashboard className="h-10 w-10 text-white" />
           <div>
-            <h2 className="text-3xl font-bold text-black">Dashboard</h2>
-            <p className="text-black/80 mt-1">
+            <h2 className="text-3xl font-bold text-white">Dashboard</h2>
+            <p className="text-white/80 mt-1">
               Welcome back! Here's an overview of your ISO Hub.
             </p>
           </div>
@@ -70,7 +71,9 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
 // Wrapper component for protected admin pages
 function ProtectedAdminLayout({ children }: { children: React.ReactNode }) {
   const authUser = JSON.parse(localStorage.getItem('auth_user') || '{}');
-  const isAdmin = authUser?.role_id === 2;
+  const isAdmin = authUser?.role_id === 2 || authUser?.role_id === 1;
+
+  // const isAdmin = authUser?.role_id === 2 || authUser?.role_id === 1 || authUser?.role_id === 3 || authUser?.role_id === 4 || authUser?.role_id === 5;
 
   if (!isAdmin) {
     return <Navigate to="/logins" replace />;
@@ -124,6 +127,7 @@ function AppRoutes() {
       <Route path="/master_database_documents" element={<ProtectedAdminLayout><Documents /></ProtectedAdminLayout>} />
       <Route path="/all_reps" element={<ProtectedAdminLayout><Reps /></ProtectedAdminLayout>} />
       <Route path="/application_notifications" element={<ProtectedAdminLayout><Notifications /></ProtectedAdminLayout>} />
+      <Route path="/birthday-notify" element={<ProtectedAdminLayout><BirthdayNotify /></ProtectedAdminLayout>} />
       <Route path="/addusers" element={<ProtectedAdminLayout><AddUsers /></ProtectedAdminLayout>} />
       <Route path="/edituser" element={<ProtectedAdminLayout><EditUsers /></ProtectedAdminLayout>} />
       <Route path="/forms" element={<ProtectedAdminLayout><Forms /></ProtectedAdminLayout>} />

@@ -19,7 +19,7 @@ export default function Users() {
       <div className="user_cont my-10">
         <a
           href="/addusers"
-          className="w-fit bg-yellow-500 hover:bg-yellow-600 text-white py-3 px-5 rounded font-medium uppercase transition duration-200 block"
+          className="w-fit bg-tracer-blue hover:bg-tracer-blue/90 text-white py-3 px-5 rounded font-medium uppercase transition duration-200 block"
         >
           Add user
         </a>
