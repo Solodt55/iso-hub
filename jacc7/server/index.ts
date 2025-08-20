@@ -163,8 +163,7 @@ app.use((req, res, next) => {
     const port = 5000;
     server.listen({
       port,
-      host: "0.0.0.0",
-      reusePort: true,
+      host: "localhost",
     }, () => {
       log(`Server successfully started on port ${port}`);
       log(`Health check available at http://localhost:${port}/health`);
