@@ -103,7 +103,7 @@ export default function Sidebar({
       icon: Cpu,
       // href: "https://02aa0592-869c-416a-869f-4cb3baafbabd-00-17ngv8bepjtga.picard.replit.dev",
       href: '/jacc',
-      external: true,
+      external: false,
     },
     { name: "Settings", icon: Settings },
 

@@ -210,14 +210,93 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(data.user);
       setRoles(data.roles);
       setPermissions(data.permissions);
+
+      // Auto-login to JACC after successful ISO-Hub login
+      try {
+        await loginToJacc(email, password);
+      } catch (error) {
+        console.error('JACC auto-login failed:', error);
+        // Don't fail the main login if JACC login fails
+      }
+      
+      // Trigger JACC initialization for immediate navigation
+      const event = new CustomEvent('jacc-initialize');
+      window.dispatchEvent(event);
     } catch (error) {
       console.error('Login error:', error);
       throw error;
     }
   };
 
+  const loginToJacc = async (email: string, password: string) => {
+    try {
+      console.log('Auto-logging into JACC...');
+      
+      // Use the correct JACC login endpoint
+      const jaccLoginUrl = `${import.meta.env.VITE_JACC_URL || 'http://localhost:5000'}/api/auth/simple-login`;
+      
+      console.log(`Trying JACC login at ${jaccLoginUrl}...`);
+      const response = await fetch(jaccLoginUrl, {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify({ username: email, password }),
+        credentials: 'include'
+      });
+
+      console.log(`JACC login response status:`, response.status);
+
+      if (response.ok) {
+        const loginData = await response.json();
+        console.log('JACC auto-login successful:', loginData);
+        
+        // Store JACC session info for later use
+        localStorage.setItem('jacc_session', JSON.stringify(loginData));
+        
+        return true;
+      } else {
+        console.warn('JACC auto-login failed, but ISO-Hub login was successful');
+        return false;
+      }
+    } catch (error) {
+      console.error('JACC auto-login error:', error);
+      // Don't throw error here as ISO-Hub login was successful
+      return false;
+    }
+  };
+
+  const logoutFromJacc = async () => {
+    try {
+      console.log('Auto-logging out from JACC...');
+      
+      // Use the correct JACC logout endpoint
+      const jaccLogoutUrl = `${import.meta.env.VITE_JACC_URL || 'http://localhost:5000'}/api/logout`;
+      
+      const response = await fetch(jaccLogoutUrl, {
+        method: 'POST',
+        credentials: 'include'
+      });
+      
+      if (response.ok) {
+        console.log('JACC auto-logout successful');
+        // Clear JACC session info
+        localStorage.removeItem('jacc_session');
+      } else {
+        console.log('JACC logout attempt failed');
+      }
+    } catch (error) {
+      console.error('JACC auto-logout error:', error);
+      // Don't throw error here as ISO-Hub logout should still proceed
+    }
+  };
+
   const logout = async () => {
     try {
+      // Auto-logout from JACC first
+      await logoutFromJacc();
+      
       if (token) {
         await fetch(`${import.meta.env.VITE_API_BASE_URL}/logout`, {
           method: 'POST',
