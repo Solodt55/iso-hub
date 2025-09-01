@@ -179,7 +179,7 @@ export default function Login() {
               htmlFor="email"
               className="block font-medium text-gray-300 mb-2"
             >
-              Username
+              Email
             </label>
             <input
               type="email"
