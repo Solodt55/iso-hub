@@ -34,6 +34,8 @@ import PrivacyPolicy from './pages/PrivacyPolicy';
 import LandingPage from './pages/LandingPage';
 import Settings from './pages/Settings';
 import IsoAiPage from './pages/IsoAiPage';
+import JACCIntegration from './components/JACCIntegration';
+import JACCDocuments from './components/JACCDocuments';
 
 function Dashboard() {
   return (
@@ -121,6 +123,12 @@ function AppRoutes() {
       <Route path="/settings" element={<ProtectedLayout><Settings /></ProtectedLayout>} />
       <Route path="/user-notification" element={<ProtectedLayout><UserNotification /></ProtectedLayout>} />
       <Route path="/iso-ai" element={<ProtectedLayout><IsoAiPage /></ProtectedLayout>} />
+
+         {/* JACC Integration Routes */}
+      <Route path="/jacc/*" element={<ProtectedLayout><JACCIntegration /></ProtectedLayout>} />
+      <Route path="/jacc/documents/:documentId" element={<ProtectedLayout><JACCDocuments /></ProtectedLayout>} />
+      <Route path="/jacc/documents" element={<ProtectedLayout><JACCDocuments /></ProtectedLayout>} />
+      
       <Route path="/admin" element={<ProtectedAdminLayout><Admin /></ProtectedAdminLayout>} />
       <Route path="/teammember" element={<ProtectedAdminLayout><TeamMember /></ProtectedAdminLayout>} />
       <Route path="/vendor" element={<ProtectedAdminLayout><Vendor /></ProtectedAdminLayout>} />

@@ -1,0 +1,38 @@
+[33m12910a9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mtracerhub-isohub-main[m[33m)[m HEAD@{0}: checkout: moving from tracerhub-isohub-jacc-int to tracerhub-isohub-main
+[33m2f3daad[m[33m ([m[1;31morigin/tracerhub-isohub-jacc-int[m[33m, [m[1;32mtracerhub-isohub-jacc-int[m[33m)[m HEAD@{1}: checkout: moving from ash-tracer-iso to tracerhub-isohub-jacc-int
+[33m2b417e3[m[33m ([m[1;31morigin/ash-tracer-iso[m[33m, [m[1;32mash-tracer-iso[m[33m)[m HEAD@{2}: checkout: moving from tracerhub-isohub-jacc-int to ash-tracer-iso
+[33m2f3daad[m[33m ([m[1;31morigin/tracerhub-isohub-jacc-int[m[33m, [m[1;32mtracerhub-isohub-jacc-int[m[33m)[m HEAD@{3}: checkout: moving from ash-tracer-iso to tracerhub-isohub-jacc-int
+[33m2b417e3[m[33m ([m[1;31morigin/ash-tracer-iso[m[33m, [m[1;32mash-tracer-iso[m[33m)[m HEAD@{4}: commit: iframe update
+[33m9dbe760[m[33m ([m[1;31mupstream/ash-tracer-iso[m[33m)[m HEAD@{5}: checkout: moving from main to ash-tracer-iso
+[33md33119b[m[33m ([m[1;31mupstream/main[m[33m, [m[1;31mupstream/isohub-without-jacc[m[33m, [m[1;31mupstream/HEAD[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/isohub-without-jacc[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{6}: checkout: moving from tracerhub-isohub-main to main
+[33m12910a9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mtracerhub-isohub-main[m[33m)[m HEAD@{7}: checkout: moving from tracerhub-isohub-jacc-int to tracerhub-isohub-main
+[33m2f3daad[m[33m ([m[1;31morigin/tracerhub-isohub-jacc-int[m[33m, [m[1;32mtracerhub-isohub-jacc-int[m[33m)[m HEAD@{8}: commit: change login to say email instead of username
+[33m382bd1b[m HEAD@{9}: checkout: moving from tracerhub-isohub-main to tracerhub-isohub-jacc-int
+[33m12910a9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mtracerhub-isohub-main[m[33m)[m HEAD@{10}: checkout: moving from tracerhub-isohub-jacc-int to tracerhub-isohub-main
+[33m382bd1b[m HEAD@{11}: commit: made jacc load on app
+[33md6a1031[m HEAD@{12}: checkout: moving from ash-tracer-iso to tracerhub-isohub-jacc-int
+[33m9dbe760[m[33m ([m[1;31mupstream/ash-tracer-iso[m[33m)[m HEAD@{13}: checkout: moving from tracerhub-isohub-jacc-int to ash-tracer-iso
+[33md6a1031[m HEAD@{14}: commit: init commit
+[33m12910a9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mtracerhub-isohub-main[m[33m)[m HEAD@{15}: checkout: moving from tracerhub-isohub-main to tracerhub-isohub-jacc-int
+[33m12910a9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mtracerhub-isohub-main[m[33m)[m HEAD@{16}: checkout: moving from ash-dev to tracerhub-isohub-main
+[33m6459c75[m[33m ([m[1;31morigin/ash-dev[m[33m, [m[1;32mash-dev[m[33m)[m HEAD@{17}: checkout: moving from tracerhub-isohub-main to ash-dev
+[33m12910a9[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mtracerhub-isohub-main[m[33m)[m HEAD@{18}: commit: init commit
+[33m8f91cbe[m HEAD@{19}: checkout: moving from tracerhub-isohub-main to tracerhub-isohub-main
+[33m8f91cbe[m HEAD@{20}: reset: moving to HEAD~1
+[33mf058c43[m[33m ([m[1;31mupstream/single-admin-26-06-2025[m[33m, [m[1;31mupstream/main-backup-with-out-tenant-10-07-2025[m[33m, [m[1;31morigin/single-admin-26-06-2025[m[33m, [m[1;31morigin/main-backup-with-out-tenant-10-07-2025[m[33m)[m HEAD@{21}: reset: moving to HEAD~1
+[33mfa760fa[m HEAD@{22}: reset: moving to HEAD~1
+[33m10f12b0[m[33m ([m[1;31mupstream/tracerhub-isohub-main[m[33m, [m[1;31morigin/tracerhub-isohub-main[m[33m)[m HEAD@{23}: checkout: moving from ash-dev to tracerhub-isohub-main
+[33m6459c75[m[33m ([m[1;31morigin/ash-dev[m[33m, [m[1;32mash-dev[m[33m)[m HEAD@{24}: commit: update more routes
+[33m961b5c2[m[33m ([m[1;31mupstream/ash-dev[m[33m)[m HEAD@{25}: checkout: moving from tracerhub-isohub-main to ash-dev
+[33m10f12b0[m[33m ([m[1;31mupstream/tracerhub-isohub-main[m[33m, [m[1;31morigin/tracerhub-isohub-main[m[33m)[m HEAD@{26}: checkout: moving from ash-dev to tracerhub-isohub-main
+[33m961b5c2[m[33m ([m[1;31mupstream/ash-dev[m[33m)[m HEAD@{27}: checkout: moving from tracerhub-isohub-main to ash-dev
+[33m10f12b0[m[33m ([m[1;31mupstream/tracerhub-isohub-main[m[33m, [m[1;31morigin/tracerhub-isohub-main[m[33m)[m HEAD@{28}: checkout: moving from latest-jacc to tracerhub-isohub-main
+[33m71477c7[m[33m ([m[1;31morigin/latest-jacc[m[33m, [m[1;32mlatest-jacc[m[33m)[m HEAD@{29}: commit: new commit
+[33m961b5c2[m[33m ([m[1;31mupstream/ash-dev[m[33m)[m HEAD@{30}: reset: moving to origin/latest-jacc
+[33m961b5c2[m[33m ([m[1;31mupstream/ash-dev[m[33m)[m HEAD@{31}: reset: moving to HEAD
+[33m961b5c2[m[33m ([m[1;31mupstream/ash-dev[m[33m)[m HEAD@{32}: checkout: moving from ash-dev to latest-jacc
+[33m961b5c2[m[33m ([m[1;31mupstream/ash-dev[m[33m)[m HEAD@{33}: reset: moving to origin/ash-dev
+[33m961b5c2[m[33m ([m[1;31mupstream/ash-dev[m[33m)[m HEAD@{34}: checkout: moving from tracerhub-isohub-main to ash-dev
+[33m10f12b0[m[33m ([m[1;31mupstream/tracerhub-isohub-main[m[33m, [m[1;31morigin/tracerhub-isohub-main[m[33m)[m HEAD@{35}: checkout: moving from ash-dev to tracerhub-isohub-main
+[33m961b5c2[m[33m ([m[1;31mupstream/ash-dev[m[33m)[m HEAD@{36}: checkout: moving from main to ash-dev
+[33md33119b[m[33m ([m[1;31mupstream/main[m[33m, [m[1;31mupstream/isohub-without-jacc[m[33m, [m[1;31mupstream/HEAD[m[33m, [m[1;31morigin/main[m[33m, [m[1;31morigin/isohub-without-jacc[m[33m, [m[1;31morigin/HEAD[m[33m, [m[1;32mmain[m[33m)[m HEAD@{37}: clone: from https://github.com/Solodt55/iso-hub.git
