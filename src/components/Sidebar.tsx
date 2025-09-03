@@ -101,8 +101,9 @@ export default function Sidebar({
     {
       name: "ISO-AI",
       icon: Cpu,
-      href: "https://02aa0592-869c-416a-869f-4cb3baafbabd-00-17ngv8bepjtga.picard.replit.dev",
-      external: true,
+      // href: import.meta.env.VITE_JACC_URL
+      href: '/jacc',
+      external: false,
     },
     { name: "Settings", icon: Settings },
 
