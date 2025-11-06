@@ -98,13 +98,13 @@ export default function Sidebar({
       href: `${import.meta.env.VITE_TRACER_URL}${queryParams}`,
       external: true,
     },
-    {
-      name: "ISO-AI",
-      icon: Cpu,
-      // href: import.meta.env.VITE_JACC_URL
-      href: '/jacc',
-      external: false,
-    },
+    // {
+    //   name: "ISO-AI",
+    //   icon: Cpu,
+    //   // href: import.meta.env.VITE_JACC_URL
+    //   href: '/jacc',
+    //   external: false,
+    // },
     { name: "Settings", icon: Settings },
 
     { name: "Resources", icon: BookOpen, href: "/applications" }
@@ -123,12 +123,12 @@ export default function Sidebar({
     // { name: 'Team Member', icon: User, path: '/teammember' },
     // { name: 'Vendor', icon: User, path: '/vendor' },
     // { name: 'Documents', icon: File, path: '/documents' },
-    {
-      name: "Documents",
-      icon: File,
-      path: "https://02aa0592-869c-416a-869f-4cb3baafbabd-00-17ngv8bepjtga.picard.replit.dev",
-      external: true,
-    },
+    // {
+    //   name: "Documents",
+    //   icon: File,
+    //   path: "https://02aa0592-869c-416a-869f-4cb3baafbabd-00-17ngv8bepjtga.picard.replit.dev",
+    //   external: true,
+    // },
 
     // { name: 'All Reps', icon: User, path: '/all_reps' },
     { name: "Notifications", icon: Bell, path: "/application_notifications" },

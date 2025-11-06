@@ -279,9 +279,15 @@ function SortableVendorCard({ vendor, index, onEdit, onDelete, onShow, id }: Sor
       <div className="flex items-start space-x-4 mb-4">
         {vendor.logo_url ? (
           <img
-            src={`${import.meta.env.VITE_IMAGE_URL}${vendor.logo_url}`}
+            src={
+              vendor.logo_url.startsWith('http')
+                ? vendor.logo_url
+                : vendor.logo_url.startsWith('/storage')
+                  ? `${import.meta.env.VITE_IMAGE_URL}${vendor.logo_url}`
+                  : `${import.meta.env.VITE_IMAGE_URL}/storage/vendor_logos/${vendor.logo_url}`
+            }
             alt={vendor.vendor_name}
-            className="h-12 w-12 object-contain flex-shrink-0"
+            className="h-12 w-12 object-cover flex-shrink-0 rounded-full border-2 border-tracer-green bg-white shadow"
           />
         ) : (
           <div className="h-12 w-12 bg-gray-100 rounded-full flex items-center justify-center flex-shrink-0">
@@ -667,35 +673,26 @@ export default function Logins() {
   const handleSubmit = async () => {
     try {
       const parsedUser = JSON.parse(localStorage.getItem("auth_user") || "{}");
-
       const formData = new FormData();
-      const vendorsData = vendorCards.map((card, index) => {
-        const vendorData = {
-          user_id: String(parsedUser.id),
-          vendor_type: card.vendor_type,
-          vendor_name: card.vendor_name,
-          logo_url: card.logo_url,
-          vendor_email: card.vendor_email,
-          vendor_phone: card.vendor_phone,
-          login_url: card.login_url,
-          support_info: card.support_info,
-          notes: card.notes,
-          rep_name: card.rep_name,
-          rep_email: card.rep_email,
-          rep_phone: card.rep_phone,
-          description: card.description,
-        };
-
+      vendorCards.forEach((card, index) => {
+        formData.append(`vendors[${index}][user_id]`, String(parsedUser.id));
+        formData.append(`vendors[${index}][vendor_type]`, card.vendor_type);
+        formData.append(`vendors[${index}][vendor_name]`, card.vendor_name);
+        formData.append(`vendors[${index}][vendor_email]`, card.vendor_email);
+        formData.append(`vendors[${index}][vendor_phone]`, card.vendor_phone);
+        formData.append(`vendors[${index}][login_url]`, card.login_url);
+        formData.append(`vendors[${index}][support_info]`, card.support_info);
+        formData.append(`vendors[${index}][notes]`, card.notes);
+        formData.append(`vendors[${index}][rep_name]`, card.rep_name);
+        formData.append(`vendors[${index}][rep_email]`, card.rep_email);
+        formData.append(`vendors[${index}][rep_phone]`, card.rep_phone);
+        formData.append(`vendors[${index}][description]`, card.description);
         if (card.logoFile) {
           formData.append(`vendors[${index}][logo_url]`, card.logoFile);
         }
-
-        return vendorData;
       });
 
       const accessToken = localStorage.getItem("auth_token");
-      formData.append("vendors", JSON.stringify(vendorsData));
-
       const response = await fetch(
         `${import.meta.env.VITE_API_BASE_URL}/vendor/create-vendor-template`,
         {
@@ -715,14 +712,10 @@ export default function Logins() {
         // Refresh the dropdown vendor list for the selected category
         await fetchAdminVendors(selectedCategory);
         setShowAddVendorModal(false);
-        // categories.forEach((category) => fetchVendors(category.id));
-
         categories.forEach((category) => {
           fetchVendors(category.id);
           fetchAdminVendors(category.id);
         });
-
-
       } else {
         const errorMessage = data?.message || "Something went wrong.";
         const errorDetails = Array.isArray(data?.errors)
@@ -732,7 +725,6 @@ export default function Logins() {
       }
     } catch (error: any) {
       console.error("Error creating vendors:", error);
-
       if (error?.response?.json) {
         try {
           const errorData = await error.response.json();
@@ -744,7 +736,6 @@ export default function Logins() {
           return;
         } catch { }
       }
-
       toast.error("Error creating vendors.");
     }
   };
