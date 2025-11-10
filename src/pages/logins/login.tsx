@@ -216,6 +216,19 @@ export default function Login() {
                 {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
               </button>
             </div>
+            <div className="flex items-center justify-end mt-2">
+              <a
+                href="#"
+                className="text-sm font-medium text-tracer-blue hover:text-tracer-blue/80 transition-colors"
+                onClick={e => {
+                  e.preventDefault();
+                  // TODO: Implement reset password modal or navigation
+                  alert('Password reset functionality coming soon.');
+                }}
+              >
+                Reset password?
+              </a>
+            </div>
           </div>
           <button
             type="submit"

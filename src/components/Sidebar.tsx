@@ -93,21 +93,22 @@ export default function Sidebar({
     // { name: 'Internal', icon: Briefcase },
     // { name: 'Misc', icon: MoreHorizontal },
     {
-      name: "ISO-Residuals",
+      name: "Residuals",
       icon: FileText,
       href: `${import.meta.env.VITE_TRACER_URL}${queryParams}`,
       external: true,
     },
-    // {
-    //   name: "ISO-AI",
-    //   icon: Cpu,
-    //   // href: import.meta.env.VITE_JACC_URL
-    //   href: '/jacc',
-    //   external: false,
-    // },
-    { name: "Settings", icon: Settings },
+    {
+      name: "Jacc",
+      icon: Cpu,
+      // href: import.meta.env.VITE_JACC_URL
+      // href: '/jacc',
+      href: 'https://jacc-final-version-keanonbiz.replit.app/',
+      external: false,
+    },
+  // { name: "Settings", icon: Settings },
 
-    { name: "Resources", icon: BookOpen, href: "/applications" }
+    // { name: "Resources", icon: BookOpen, href: "/applications" }
     
     // { name: 'Users', icon: User, href: '/users' },
     // { name: 'Residuals', icon: FileText, href: 'https://dev.tracerpos.com'  },

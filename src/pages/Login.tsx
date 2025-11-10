@@ -77,6 +77,19 @@ export const Login: React.FC = () => {
               />
             </div>
           </div>
+          <div className="flex items-center justify-end">
+            <a
+              href="#"
+              className="text-sm font-medium text-indigo-600 hover:text-indigo-500 transition-colors"
+              onClick={e => {
+                e.preventDefault();
+                // TODO: Implement reset password modal or navigation
+                alert('Password reset functionality coming soon.');
+              }}
+            >
+              Forgot password?
+            </a>
+          </div>
 
           <div>
             <button
