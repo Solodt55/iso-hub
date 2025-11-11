@@ -93,21 +93,22 @@ export default function Sidebar({
     // { name: 'Internal', icon: Briefcase },
     // { name: 'Misc', icon: MoreHorizontal },
     {
-      name: "ISO-Residuals",
+      name: "Residuals",
       icon: FileText,
       href: `${import.meta.env.VITE_TRACER_URL}${queryParams}`,
       external: true,
     },
     {
-      name: "ISO-AI",
+      name: "Jacc",
       icon: Cpu,
       // href: import.meta.env.VITE_JACC_URL
-      href: '/jacc',
+      // href: '/jacc',
+      href: 'https://jacc-final-version-keanonbiz.replit.app/',
       external: false,
     },
-    { name: "Settings", icon: Settings },
+  // { name: "Settings", icon: Settings },
 
-    { name: "Resources", icon: BookOpen, href: "/applications" }
+    // { name: "Resources", icon: BookOpen, href: "/applications" }
     
     // { name: 'Users', icon: User, href: '/users' },
     // { name: 'Residuals', icon: FileText, href: 'https://dev.tracerpos.com'  },
@@ -123,12 +124,12 @@ export default function Sidebar({
     // { name: 'Team Member', icon: User, path: '/teammember' },
     // { name: 'Vendor', icon: User, path: '/vendor' },
     // { name: 'Documents', icon: File, path: '/documents' },
-    {
-      name: "Documents",
-      icon: File,
-      path: "https://02aa0592-869c-416a-869f-4cb3baafbabd-00-17ngv8bepjtga.picard.replit.dev",
-      external: true,
-    },
+    // {
+    //   name: "Documents",
+    //   icon: File,
+    //   path: "https://02aa0592-869c-416a-869f-4cb3baafbabd-00-17ngv8bepjtga.picard.replit.dev",
+    //   external: true,
+    // },
 
     // { name: 'All Reps', icon: User, path: '/all_reps' },
     { name: "Notifications", icon: Bell, path: "/application_notifications" },
