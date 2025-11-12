@@ -119,6 +119,12 @@ export default function Sidebar({
     //   path: "https://02aa0592-869c-416a-869f-4cb3baafbabd-00-17ngv8bepjtga.picard.replit.dev",
     //   external: true,
     // },
+    // {
+    //   name: "Documents",
+    //   icon: File,
+    //   path: "https://02aa0592-869c-416a-869f-4cb3baafbabd-00-17ngv8bepjtga.picard.replit.dev",
+    //   external: true,
+    // },
 
     // { name: 'All Reps', icon: User, path: '/all_reps' },
     { name: "Notifications", icon: Bell, path: "/application_notifications" },
