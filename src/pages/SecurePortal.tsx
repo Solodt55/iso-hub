@@ -155,7 +155,7 @@ const SecurePortal: React.FC = () => {
     try {
       const token = localStorage.getItem('auth_token');
       const userData = localStorage.getItem('auth_user');
-      
+
       if (!userData) {
         throw new Error('User data not found');
       }
@@ -180,7 +180,8 @@ const SecurePortal: React.FC = () => {
       }
 
       const data = await response.json();
-      toast.success(data.message || 'Email sent successfully!');
+      console.log('Email sent successfully:', data);
+      toast.success(data.message || 'Secure upload link has been sent successfully!');
       setIsModalOpen(false);
       setFormData({ email: '', name: '' });
       fetchFiles(); // Refresh the file list after sending email
@@ -277,15 +278,15 @@ const SecurePortal: React.FC = () => {
     }
   };
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString("en-US", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-      hour: "2-digit",
-      minute: "2-digit",
-    });
-  };
+  // const formatDate = (dateString: string) => {
+  //   return new Date(dateString).toLocaleDateString("en-US", {
+  //     year: "numeric",
+  //     month: "short",
+  //     day: "numeric",
+  //     hour: "2-digit",
+  //     minute: "2-digit",
+  //   });
+  // };
 
   const calculateRemainingDays = (uploadedAt: string): number => {
     const uploadDate = new Date(uploadedAt);
@@ -300,7 +301,8 @@ const SecurePortal: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 ml-2">
+    <>
+      <div className="min-h-screen bg-gray-50 ml-2">
       <div className="max-w-7xl mx-auto p-6">
         <div className="bg-white rounded-lg shadow-lg p-8">
           <div className="flex justify-between items-center mb-8">
@@ -598,6 +600,8 @@ const SecurePortal: React.FC = () => {
         </div>
       )}
     </div>
+    <Toaster position="top-right" />
+    </>
   );
 };
 

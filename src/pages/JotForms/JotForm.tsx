@@ -87,6 +87,19 @@ interface FormData {
   shipping_city: string;
   shipping_state: string;
   shipping_zip: string;
+
+  // Business Information fields
+  dba_street_address: string;
+  dba_street_address2: string;
+
+  // Corporate Contact Information fields
+  corporate_street_address1: string;
+  corporate_street_address2: string;
+  corporate_city: string;
+  corporate_state: string;
+  corporate_zip: string;
+  business_location_phone_number: string;
+  business_contact_mail: string;
 }
 
 // Put this outside your component
@@ -170,6 +183,19 @@ const blankFormData: FormData = {
   shipping_city: "",
   shipping_state: "",
   shipping_zip: "",
+
+  // Business Information fields
+  dba_street_address: "",
+  dba_street_address2: "",
+
+  // Corporate Contact Information fields
+  corporate_street_address1: "",
+  corporate_street_address2: "",
+  corporate_city: "",
+  corporate_state: "",
+  corporate_zip: "",
+  business_location_phone_number: "",
+  business_contact_mail: "",
 };
 
 // Add this CSS at the top of the file
@@ -420,7 +446,8 @@ export default function JotForm() {
     // Append all text fields
     Object.entries(formData).forEach(([key, value]) => {
       if (Array.isArray(value)) {
-        value.forEach((v, i) => formDataToSend.append(`${key}[${i}]`, v));
+        // Convert array to JSON string for database storage
+        formDataToSend.append(key, JSON.stringify(value));
       } else {
         formDataToSend.append(key, value);
       }
@@ -794,7 +821,7 @@ export default function JotForm() {
                     }}
                     className="mr-2 h-4 w-4 border-gray-300 text-tracer-green focus:ring-tracer-green"
                   />
-                  Shipping Address is the Same
+                  Yes, same as street address above
                 </label>
 
 
@@ -1364,7 +1391,7 @@ export default function JotForm() {
               <div className="grid grid-cols-1 md:grid-cols-1 gap-4">
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Processing Services
+                    Processing Services (Select Multiple)
                   </label>
                   <div className="flex flex-wrap gap-4">
                     {[
@@ -1389,15 +1416,18 @@ export default function JotForm() {
                     ].map(({ value, label }) => (
                       <label
                         key={value}
-                        className="inline-flex items-center text-gray-700"
+                        className="inline-flex items-center text-gray-700 cursor-pointer"
                       >
                         <input
-                          type="radio"
-                          name="processing_services"
+                          type="checkbox"
+                          name="processing_services[]"
                           onChange={handleInputChange}
                           value={value}
-                          checked={formData.processing_services === value}
-                          className="mr-2 h-4 w-4 border-gray-300 text-tracer-green focus:ring-tracer-green"
+                          checked={
+                            Array.isArray(formData.processing_services) &&
+                            formData.processing_services.includes(value)
+                          }
+                          className="mr-2 h-4 w-4 border-gray-300 text-tracer-green focus:ring-tracer-green cursor-pointer"
                         />
                         {label}
                       </label>
@@ -1733,15 +1763,18 @@ export default function JotForm() {
                     ].map(({ value, label }) => (
                       <label
                         key={value}
-                        className="inline-flex items-center text-gray-700"
+                        className="inline-flex items-center text-gray-700 cursor-pointer"
                       >
                         <input
-                          type="radio"
-                          name="virtual_terminal"
+                          type="checkbox"
+                          name="virtual_terminal[]"
                           onChange={handleInputChange}
                           value={value}
-                          checked={formData.virtual_terminal === value}
-                          className="mr-2 h-4 w-4 border-gray-300 text-tracer-green focus:ring-tracer-green"
+                          checked={
+                            Array.isArray(formData.virtual_terminal) &&
+                            formData.virtual_terminal.includes(value)
+                          }
+                          className="mr-2 h-4 w-4 border-gray-300 text-tracer-green focus:ring-tracer-green cursor-pointer"
                         />
                         {label}
                       </label>

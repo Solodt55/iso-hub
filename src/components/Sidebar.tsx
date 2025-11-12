@@ -1,25 +1,14 @@
 import {
-  Shield,
   FileText,
-  Settings,
   Cpu,
   User,
   LogOut,
-  File,
   Bell,
-  FormInput,
-  X,
-  LayoutDashboard,
-  Users,
-  UserPlus,
-  BookOpen,
   Gift
 } from "lucide-react";
 import { useAuth } from "../providers/AuthProvider";
 import { useNavigate, Link, useLocation } from "react-router-dom";
 import { LucideIcon } from "lucide-react";
-import UserRep from "./UserRep";
-import JACC from "./JACC";
 import { useState, useEffect } from "react";
 
 interface Category {
@@ -104,7 +93,7 @@ export default function Sidebar({
       // href: import.meta.env.VITE_JACC_URL
       // href: '/jacc',
       href: 'https://jacc-final-version-keanonbiz.replit.app/',
-      external: false,
+      external: true,
     },
   // { name: "Settings", icon: Settings },
 

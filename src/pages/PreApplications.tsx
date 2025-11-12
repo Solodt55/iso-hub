@@ -193,6 +193,28 @@ function FormDetailsModal({ form, onClose }: FormDetailsModalProps) {
   const localStoregeAuthParsedUser = localStoregeAuth ? JSON.parse(localStoregeAuth) : null;
   const localStoregeUserRole = localStoregeAuthParsedUser.role_id;
 
+  // Helper function to parse array fields stored as JSON strings
+  const parseArrayField = (value: any) => {
+    if (!value) return [];
+    if (Array.isArray(value)) return value;
+    
+    try {
+      // Handle escaped quotes - unescape if necessary
+      let stringValue = String(value);
+      if (stringValue.startsWith('"') && stringValue.endsWith('"')) {
+        stringValue = stringValue.slice(1, -1); // Remove outer quotes
+        stringValue = stringValue.replace(/\\"/g, '"'); // Unescape inner quotes
+      }
+      
+      const parsed = JSON.parse(stringValue);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch (e) {
+      console.error('Error parsing array field:', value, e);
+      return [];
+    }
+  };
+
+
   // Helper function to check if file is an image
   const isImageFile = (fileName: string) => {
     const ext = fileName.split(".").pop()?.toLowerCase();
@@ -437,27 +459,12 @@ function FormDetailsModal({ form, onClose }: FormDetailsModalProps) {
                   Business Type
                 </label>
                 <div className="flex flex-wrap gap-4 mt-2">
-                  {[
-                    { value: "LLC", label: "LLC" },
-                    { value: "Corp", label: "Corp" },
-                    { value: "Non-Profit", label: "Non-Profit" },
-                    { value: "Sole Prop", label: "Sole Prop" },
-                    { value: "Gov", label: "Gov" },
-                    {
-                      value: "Association/Estate/Trust",
-                      label: "Association/Estate/Trust",
-                    },
-                    { value: "Other", label: "Other" },
-                  ].map(({ value, label }) => (
+                  {parseArrayField(form.business_profile_business_type).map((type: string, index: number) => (
                     <span
-                      key={value}
-                      className={`px-3 py-1 rounded-full text-sm ${
-                        isChecked(form.business_profile_business_type, value)
-                          ? "bg-tracer-green text-white"
-                          : "bg-zinc-700 text-white"
-                      }`}
+                      key={index}
+                      className="px-3 py-1 rounded-full text-sm bg-tracer-green text-white"
                     >
-                      {label}
+                      {type}
                     </span>
                   ))}
                 </div>
@@ -893,7 +900,7 @@ function FormDetailsModal({ form, onClose }: FormDetailsModalProps) {
                   Tip Amounts
                 </label>
                 <div className="flex gap-2 mt-1">
-                  {JSON.parse(
+                  {parseArrayField(
                     form.get_jotform_details?.[0]?.tip_amounts || "[]"
                   ).map((tip: string, index: number) => (
                     <span
@@ -927,9 +934,16 @@ function FormDetailsModal({ form, onClose }: FormDetailsModalProps) {
                 <label className="block text-sm font-medium text-black">
                   Processing Services
                 </label>
-                <p className="mt-1 text-zinc-400 font-medium">
-                  {form.processing_services}
-                </p>
+                <div className="flex gap-2 mt-1">
+                  {parseArrayField(form.processing_services).map((service: string, index: number) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 bg-zinc-700 text-white rounded-full text-sm"
+                    >
+                      {service}
+                    </span>
+                  ))}
+                </div>
               </div>
 
               {/* <div>
@@ -1041,9 +1055,16 @@ function FormDetailsModal({ form, onClose }: FormDetailsModalProps) {
                 <label className="block text-sm font-medium text-black">
                   Virtual Terminal
                 </label>
-                <p className="mt-1 text-zinc-400 font-medium">
-                  {form.virtual_terminal}
-                </p>
+                <div className="flex gap-2 mt-1">
+                  {parseArrayField(form.virtual_terminal).map((option: string, index: number) => (
+                    <span
+                      key={index}
+                      className="px-2 py-1 bg-zinc-700 text-white rounded-full text-sm"
+                    >
+                      {option}
+                    </span>
+                  ))}
+                </div>
               </div>
 
               <div>
@@ -1243,8 +1264,9 @@ function DuplicateFormModal({ form, onClose }: DuplicateFormModalProps) {
     if (!value) return [];
     if (Array.isArray(value)) return value;
     try {
-      return JSON.parse(value);
-    } catch (e) {
+      const parsed = JSON.parse(value);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
       return [];
     }
   };
