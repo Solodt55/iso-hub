@@ -613,12 +613,12 @@ export default function Admin() {
         >
           Add User
         </button>
-        <button
+        {/* <button
           onClick={() => setIsRoleModalOpen(true)}
           className="w-fit bg-tracer-green hover:bg-tracer-green/90 text-white py-3 px-5 rounded font-medium uppercase transition duration-200 block"
         >
           MANAGE ROLES
-        </button>
+        </button> */}
         <select
           className="ml-4 px-4 py-3 rounded font-medium uppercase bg-white border-2 border-tracer-green text-tracer-green focus:outline-none focus:ring-2 focus:ring-tracer-green focus:border-tracer-green transition duration-200 block"
           style={{ minWidth: '180px' }}
